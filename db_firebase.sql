@@ -98,29 +98,13 @@ CREATE TABLE IF NOT EXISTS history(
     PRIMARY KEY (id_history)
 );
 
--- FOREIGN KEY WITHOUT CONNECTING TO FIREBASE
-ALTER TABLE users
-ADD FOREIGN KEY (id_role) REFERENCES roles(id_role),
-ADD FOREIGN KEY (id_bentuk_muka) REFERENCES bentuk_muka(id_bentuk_muka);
+CREATE TABLE IF NOT EXISTS kecocokan(
+    id_kecocokan INT NOT NULL, 
+    id_bentuk_muka INT NOT NULL,
+    id_bentuk_kacamata INT NOT NULL,
 
-ALTER TABLE toko 
-ADD FOREIGN KEY (id_user) REFERENCES users(id_user);
-
-ALTER TABLE produk
-ADD FOREIGN KEY (id_toko) REFERENCES toko(id_toko),
-ADD FOREIGN KEY (id_bentuk_kacamata) REFERENCES bentuk_kacamata(id_bentuk_kacamata);
-
-ALTER TABLE foto_produk
-ADD FOREIGN KEY (id_produk) REFERENCES produk(id_produk);
-
-ALTER TABLE rating
-ADD FOREIGN KEY (id_user) REFERENCES users(id_user),
-ADD FOREIGN KEY (id_produk) REFERENCES produk(id_produk);
-
-ALTER TABLE history
-ADD FOREIGN KEY (id_produk) REFERENCES produk(id_produk),
-ADD FOREIGN KEY (id_status) REFERENCES status_history (id_status),
-ADD FOREIGN KEY (id_user) REFERENCES users(id_user);
+    PRIMARY KEY(id_kecocokan)
+);
 
 -- FOREIGN KEY CONNECTED TO FIREBASE
 ALTER TABLE produk
@@ -134,4 +118,8 @@ ADD FOREIGN KEY (id_produk) REFERENCES produk(id_produk);
 
 ALTER TABLE history
 ADD FOREIGN KEY (id_produk) REFERENCES produk(id_produk),
-ADD FOREIGN KEY (id_status) REFERENCES status_history (id_status)
+ADD FOREIGN KEY (id_status) REFERENCES status_history (id_status);
+
+ALTER TABLE kecocokan
+ADD FOREIGN KEY (id_bentuk_kacamata) REFERENCES bentuk_kacamata(id_bentuk_kacamata),
+ADD FOREIGN KEY (id_bentuk_muka) REFERENCES bentuk_muka(id_bentuk_muka);
