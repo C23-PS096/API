@@ -44,31 +44,36 @@ def register():
     content = get_data_json(request)
 
     try: 
+        # ambil values dari json nya
         name, email, password, confirmation_password, phone_number = itemgetter('name', 'email', 'password', 'confirmation_password', 'phone_number') (content) 
         
+        # password mismatch
         if (password != confirmation_password):
             return {
                 'status': 400,
                 'message': 'Password doesn’t match'
             }
     
+        # hashing id_user
         currentDateTime = datetime.now()
         hashing = hashlib.md5((name + currentDateTime).encode())
         id_user = hashing.hexdigest()
         
-        print (id_user)
+        # sql
         sql = "INSERT INTO users(id_user, nama, email, no_hp, password) VALUES (%s, %s, %s, %s, %s)"
         values = (id_user, name, email, password, phone_number)
         
         cur.execute(sql, values)
         db.commit()
-            
+    
+    # kalau values json nya gaada
     except KeyError: 
         return {
           'status': 400,  
           'message': 'All data must be filled'
         }, 400
-        
+    
+    # berhasil semuanya
     return {
         'status': 200,
         'message': 'Success'
