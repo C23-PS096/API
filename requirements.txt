@@ -1,0 +1,4 @@
+Flask == 2.3.2
+SQLAlchemy == 2.0.15
+mysqlclient==2.1.1
+datetime == 5.1
