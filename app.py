@@ -9,7 +9,7 @@ app = Flask(__name__)
 def get_data_json(req):
     content_type = req.headers.get('Content-Type')
     if (content_type == 'application/json'):
-        json = request.json
+        json = req.json
         return json
 
 # DEFINE THE DATABASE CREDENTIALS
@@ -56,7 +56,7 @@ def register():
     
         # hashing id_user
         currentDateTime = datetime.now()
-        hashing = hashlib.md5((name + currentDateTime).encode())
+        hashing = hashlib.md5((name + str(currentDateTime)).encode())
         id_user = hashing.hexdigest()
         
         # sql
@@ -78,6 +78,20 @@ def register():
         'status': 200,
         'message': 'Success'
     }, 200
+
+@app.route("/foto", methods=['POST'])
+def uploadFoto():
+    return
+
+@app.route("/toko", methods=["GET", "POST"])
+def getToko():
+    return
+
+@app.route("/toko/<id_toko>", methods=["GET"])
+def getToko(id_toko):
+    return id_toko
+
+
 
 if __name__ == '__main__':
     app.run(host = "localhost", port=8000, debug=True)
