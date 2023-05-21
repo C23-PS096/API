@@ -26,7 +26,8 @@ db = MySQLdb.connect(
 cur = db.cursor()
         
 '''
-1. POST /register (bikin cadangan)
+1. POST /register (done)
+2. POST /login (done)
 3. POST /foto 
 5. GET /toko (connect firebase)
 7. POST /rating
