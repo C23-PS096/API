@@ -1,17 +1,16 @@
 from flask import Flask, request
 from operator import itemgetter
-from datetime import datetime
+from datetime import datetime, timedelta
+from google.cloud import storage
+from werkzeug.utils import secure_filename
 import hashlib
 import MySQLdb
+import mimetypes
+
+BUCKET_NAME = "dev-optikoe-bucket"
 
 app = Flask(__name__)
     
-def get_data_json(req):
-    content_type = req.headers.get('Content-Type')
-    if (content_type == 'application/json'):
-        json = req.json
-        return json
-
 # DEFINE THE DATABASE CREDENTIALS
 db = MySQLdb.connect(
     user = 'root',
@@ -53,11 +52,8 @@ def register():
                 'status': 400,
                 'message': 'Password doesn’t match'
             }
-    
-        # hashing id_user
-        currentDateTime = datetime.now()
-        hashing = hashlib.md5((name + str(currentDateTime)).encode())
-        id_user = hashing.hexdigest()
+
+        id_user = createId(name)
         
         # sql
         sql = "INSERT INTO users(id_user, nama, email, no_hp, password) VALUES (%s, %s, %s, %s, %s)"
@@ -81,17 +77,92 @@ def register():
 
 @app.route("/foto", methods=['POST'])
 def uploadFoto():
-    return
-
+    args = request.args.get('type')
+    pathFolder = ""
+    
+    if args == 'profil':
+        pathFolder = "foto-profil/"
+        
+    if args == 'produk':
+        pathFolder = "produk/"
+    
+    if request.method == 'POST':
+        file_upload = request.files['file']
+        name_file = secure_filename(file_upload.filename)
+        
+        if file_upload:
+            upload = upload_to_gcs(file_upload, pathFolder + name_file)
+            print(upload)
+            if upload:
+                return {
+                    'status': 200,
+                    'message': 'Success'
+                }, 200
+                
+            else:    
+                return {
+                    'status': 400,
+                    'message': "File upload failed"
+                }, 400
+        
+    
 @app.route("/toko", methods=["GET", "POST"])
 def getToko():
     return
 
 @app.route("/toko/<id_toko>", methods=["GET"])
-def getToko(id_toko):
+def getTokoById(id_toko):
     return id_toko
 
+@app.route("/rating", methods=["GET", "POST"])
+def rating():
+    return
 
+@app.route("/rating/<id_rating>", methods=["GET"])
+def getRatingById(id_rating):
+    return id_rating
+
+@app.route("/kacamata", methods=["GET"])
+def getKacamata():
+    return
+
+@app.route("/muka", methods=["GET"])
+def getMuka():
+    return
+
+def get_data_json(req):
+    content_type = req.headers.get('Content-Type')
+    if (content_type == 'application/json'):
+        json = req.json
+        return json
+    
+def createId(name):
+    # hashing id_user
+    currentDateTime = datetime.now()
+    hashing = hashlib.md5((name + str(currentDateTime)).encode())
+    id_user = hashing.hexdigest()
+    return id_user
+
+def upload_to_gcs(file_data, destination_blob_name, bucket_name = BUCKET_NAME):
+    # Create a client
+    client = storage.Client.from_service_account_json('service_account.json')
+    
+    # Get the bucket
+    bucket = client.get_bucket(bucket_name)
+    
+    # Create a blob object with the desired destination blob name
+    blob = bucket.blob(destination_blob_name)
+    
+    # Set the content type based on file extension
+    content_type, _ = mimetypes.guess_type(file_data.filename)
+    blob.content_type = content_type
+    
+    # Upload the file data to the blob
+    blob.upload_from_file(file_data)
+    
+    expiration = datetime.now() + timedelta(hours=1)
+    signed_url = blob.generate_signed_url(expiration=expiration)
+    return signed_url
 
 if __name__ == '__main__':
     app.run(host = "localhost", port=8000, debug=True)
