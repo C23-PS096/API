@@ -1,10 +1,12 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from operator import itemgetter
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 import MySQLdb
+import jwt
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'optiqoe123'
     
 def get_data_json(req):
     content_type = req.headers.get('Content-Type')
@@ -56,7 +58,7 @@ def register():
     
         # hashing id_user
         currentDateTime = datetime.now()
-        hashing = hashlib.md5((name + currentDateTime).encode())
+        hashing = hashlib.md5((name + str(currentDateTime)).encode())
         id_user = hashing.hexdigest()
         
         # sql
@@ -78,6 +80,53 @@ def register():
         'status': 200,
         'message': 'Success'
     }, 200
+
+@app.route("/login", methods = ['POST'])
+def login():
+    content = get_data_json(request)
+    try:
+        # Ambil values dari JSON
+        email, password = itemgetter('email', 'password')(content)
+
+        # Ambil data dari SQL
+        sql = "SELECT id_user, email, password FROM users WHERE email = %s"
+        values = (email,)
+
+        cur.execute(sql, values)
+        user = cur.fetchone()
+
+        if user:
+            id_user, _, password_db = user
+            # Memverifikasi password
+            if password_db != password:
+                return jsonify({'status': 401, 'message': 'Invalid email or password'}), 401
+
+             # Generate token
+            token_payload = {
+                'id_user': id_user,
+                'email': email,
+                'exp': datetime.utcnow() + timedelta(hours=1)  # Token berlaku selama 1 jam
+            }
+            token = jwt.encode(token_payload, app.config['SECRET_KEY'], algorithm='HS256')
+
+
+            # Mengembalikan data pengguna
+            response = {
+                'status': 200,
+                'message': 'Login successful',
+                'data': {
+                    'id_user': id_user,
+                    'email': email,
+                    'token': token
+                }
+            }
+            return jsonify(response), 200
+        else:
+            return jsonify({'status': 400, 'message': 'Email not found'}), 400
+        
+    # Jika values JSON tidak ada
+    except KeyError:
+        return jsonify({'status': 400, 'message': 'All data must be filled'}), 400
 
 if __name__ == '__main__':
     app.run(host = "localhost", port=8000, debug=True)
