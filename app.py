@@ -29,6 +29,7 @@ cur = db.cursor()
 1. POST /register (done)
 2. POST /login (done)
 3. POST /foto 
+4. GET /user 
 5. GET /toko (connect firebase)
 7. POST /rating
 9. GET /kacamata
@@ -128,6 +129,122 @@ def login():
     # Jika values JSON tidak ada
     except KeyError:
         return jsonify({'status': 400, 'message': 'All data must be filled'}), 400
+
+@app.route("/user", methods=['GET'])
+def get_users():
+    token = request.headers.get('Authorization')
+    if not token or not token.startswith('Bearer '):
+        return jsonify({'status': 401, 'message': 'Invalid or missing bearer token'}), 401
+    
+    try:
+        # Extract bearer token
+        token = token.split("Bearer ")[1]
+        
+        # Verifikasi token
+        token_payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        decoded_id_user = token_payload['id_user']
+
+        # Fetch data user dari database
+        sql = "SELECT id_user, nama, email, no_hp, id_role, id_bentuk_muka, path_foto, alamat FROM users"
+        cur.execute(sql)
+        users = cur.fetchall()
+
+        if users:
+
+            # tampilkan data semua user dalam array
+            response_data = []
+            for user in users:
+                id_user, nama, email, no_hp, null, null, null, null = user
+                user_data = {
+                    'id_user': id_user,
+                    'nama': nama,
+                    'email': email,
+                    'no_hp': no_hp,
+                    'id_role': null,
+                    'id_bentuk_muka': null,
+                    'path_foto': null,
+                    'alamat': null
+                }
+                response_data.append(user_data)
+
+            # generate respons
+            response = {
+                'status': 200,
+                'message': 'Success',
+                'data': response_data
+            }
+
+            response_headers = {
+                'Authorization': request.headers.get('Authorization')
+            }
+            return jsonify(response), 200, response_headers
+
+        else:
+            return jsonify({'status': 400, 'message': 'No users found'}), 400
+    
+    # apabila token expired
+    except jwt.ExpiredSignatureError:
+        return jsonify({'status': 401, 'message': 'Token has expired'}), 401
+    
+    # apabila token invalid
+    except jwt.InvalidTokenError:
+        return jsonify({'status': 401, 'message': 'Invalid token'}), 401
+
+
+@app.route("/user/<id_user>", methods=['GET'])
+def get_user_id(id_user):
+    token = request.headers.get('Authorization')
+    if not token:
+        return jsonify({'status': 401, 'message': 'Authorization token is missing'}), 401
+    
+    try:
+        # Extract bearer token
+        token = token.split("Bearer ")[1]
+
+        # Verifikasi token
+        token_payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        decoded_id_user = token_payload['id_user']
+
+        # Check jika decode ID dari token sama dengan ID yang diminta
+        if decoded_id_user != id_user:
+            return jsonify({'status': 401, 'message': 'Invalid user ID'}), 401
+
+        # Fetch data user dari database
+        sql = "SELECT id_user, nama, email, no_hp, id_role, id_bentuk_muka, path_foto, alamat FROM users WHERE id_user = %s"
+        values = (id_user,)
+
+        cur.execute(sql, values)
+        user = cur.fetchone()
+
+        if user:
+            id_user, nama, email, no_hp, null, null, null, null = user
+            # generate respons
+            response = {
+                'status': 200,
+                'message': 'Success',
+                'data': {
+                    'id_user': id_user,
+                    'nama': nama,
+                    'email': email,
+                    'no_hp': no_hp,
+                    'id_role': null,
+                    'id_bentuk_muka': null,
+                    'path_foto': null,
+                    'alamat': null,
+
+                }
+            }
+            return jsonify(response), 200
+        else:
+            return jsonify({'status': 400, 'message': 'User not found'}), 400
+    
+    # apabila token expired
+    except jwt.ExpiredSignatureError:
+        return jsonify({'status': 401, 'message': 'Token has expired'}), 401
+    
+    # apabila token invalid
+    except jwt.InvalidTokenError:
+        return jsonify({'status': 401, 'message': 'Invalid token'}), 401
 
 if __name__ == '__main__':
     app.run(host = "localhost", port=8000, debug=True)
