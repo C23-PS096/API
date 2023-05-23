@@ -90,40 +90,40 @@ def register():
 
 @app.route("/foto", methods=['POST'])
 def uploadFoto():
-args = request.args.get('type')
-pathFolder = ""
+    args = request.args.get('type')
+    pathFolder = ""
 
-if args == 'profil':
-    pathFolder = "foto-profil/"
+    if args == 'profil':
+        pathFolder = "foto-profil/"
 
-if args == 'produk':
-    pathFolder = "produk/"
+    if args == 'produk':
+        pathFolder = "produk/"
 
-if request.method == 'POST':
-    file_upload = request.files['file']
+    if request.method == 'POST':
+        file_upload = request.files['file']
 
-    # Use os.path.splitext to split the file name and extension
-    filename, file_ext = os.path.splitext(file_upload.filename)
-    name_file_secured = (hashlib.md5(filename.encode())).hexdigest()
+        # Use os.path.splitext to split the file name and extension
+        filename, file_ext = os.path.splitext(file_upload.filename)
+        name_file_secured = (hashlib.md5(filename.encode())).hexdigest()
 
-    if file_upload:
-        upload = upload_to_gcs(file_upload, pathFolder + name_file_secured + file_ext)
-        print(upload)
-        if upload:
-            return {
-                'status': 200,
-                'message': 'Success',
-                'data': {
-                    'folder': pathFolder, 
-                    'filename': name_file_secured 
-                }
-            }, 200
+        if file_upload:
+            upload = upload_to_gcs(file_upload, pathFolder + name_file_secured + file_ext)
+            print(upload)
+            if upload:
+                return {
+                    'status': 200,
+                    'message': 'Success',
+                    'data': {
+                        'folder': pathFolder, 
+                        'filename': name_file_secured 
+                    }
+                }, 200
 
-        else:    
-            return {
-                'status': 400,
-                'message': "File upload failed"
-            }, 400
+            else:    
+                return {
+                    'status': 400,
+                    'message': "File upload failed"
+                }, 400
 
 @app.route("/login", methods = ['POST'])
 def login():
