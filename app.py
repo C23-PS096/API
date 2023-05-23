@@ -299,7 +299,102 @@ def get_user_id(decoded_id_user, decoded_id_toko, id_user):
     # apabila server error
     except:
         return jsonify({'status': 500, 'message': 'Internal Server Error'}), 500
+
+# @app.route("/user/<string:role>", methods=['GET'])
+# @token_required
+# def get_user_role(decoded_id_user, id_user, role):
+#     try:
+#         # Fetch data user dari database
+#         sql = """
+#         SELECT u.id_user, u.nama, u.email, u.no_hp, u.id_role, u.id_bentuk_muka, u.path_foto, u.alamat
+#         FROM users u
+#         INNER JOIN roles r ON  u.id_role = r.id_role
+#         WHERE r.nama_role = %s
+#         """
+#         values = (role,)
+#         cur.execute(sql, values)
+#         users = cur.fetchall()  
+
+#         if users:
+#             # tampilkan data semua user dalam array
+#             response_data = []
+#             for user in users:
+#                 id_user, nama, email, no_hp, id_role, id_bentuk_muka, path_foto, alamat = user
+#                 user_data = {
+#                     'id_user': id_user,
+#                     'nama': nama,
+#                     'email': email,
+#                     'no_hp': no_hp,
+#                     'id_role': id_role,
+#                     'id_bentuk_muka': id_bentuk_muka,
+#                     'path_foto': path_foto,
+#                     'alamat': alamat
+#                 }
+#                 response_data.append(user_data)
+
+#             # generate respons
+#             response = {
+#                 'status': 200,
+#                 'message': 'Success',
+#                 'data': response_data
+#             }
+
+#             response_headers = {
+#                 'Authorization': request.headers.get('Authorization')
+#             }
+#             return jsonify(response), 200, response_headers
+#         else:
+#             return jsonify({'status': 400, 'message': 'No users in that role found'}), 400
         
+#     # apabila server error
+#     except:
+#         return jsonify({'status': 500, 'message': 'Internal Server Error'}), 500
+    
+@app.route("/user/<int:id_bentuk_muka>", methods=['GET'])
+@token_required
+def get_user_face(decoded_id_user, id_user, id_bentuk_muka):
+    try:
+        # Fetch data user dari database
+        sql = "SELECT id_user, nama, email, no_hp, id_role, id_bentuk_muka, path_foto, alamat FROM users WHERE id_bentuk_muka = %s"
+        values = (id_bentuk_muka,)
+        cur.execute(sql, values)
+        users = cur.fetchall()  
+
+        if users:
+            # tampilkan data semua user dalam array
+            response_data = []
+            for user in users:
+                id_user, nama, email, no_hp, id_role, id_bentuk_muka, path_foto, alamat = user
+                user_data = {
+                    'id_user': id_user,
+                    'nama': nama,
+                    'email': email,
+                    'no_hp': no_hp,
+                    'id_role': id_role,
+                    'id_bentuk_muka': id_bentuk_muka,
+                    'path_foto': path_foto,
+                    'alamat': alamat
+                }
+                response_data.append(user_data)
+
+            # generate respons
+            response = {
+                'status': 200,
+                'message': 'Success',
+                'data': response_data
+            }
+
+            response_headers = {
+                'Authorization': request.headers.get('Authorization')
+            }
+            return jsonify(response), 200, response_headers
+        else:
+            return jsonify({'status': 400, 'message': 'No users in that type face found'}), 400
+        
+    # apabila server error
+    except:
+        return jsonify({'status': 500, 'message': 'Internal Server Error'}), 500
+
 @app.route("/toko", methods=["POST", "PATCH", "GET"])
 @token_required
 def getToko(decoded_id_user, decoded_id_toko):
