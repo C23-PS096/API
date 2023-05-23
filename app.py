@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from operator import itemgetter
 from datetime import datetime, timedelta
+from functools import wraps
 
 from google.cloud import storage
 from werkzeug.utils import secure_filename
@@ -8,9 +9,6 @@ import hashlib
 import MySQLdb
 import mimetypes
 import os
-
-import hashlib
-import MySQLdb
 import jwt
 
 BUCKET_NAME = "dev-optikoe-bucket"
@@ -172,27 +170,45 @@ def login():
     except KeyError:
         return jsonify({'status': 400, 'message': 'All data must be filled'}), 400
 
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'status': 401, 'message': 'Invalid or missing bearer token'}), 401
+
+        try:
+            # Extract bearer token
+            token = token.split("Bearer ")[1]
+
+            # Verifikasi token
+            token_payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            decoded_id_user = token_payload['id_user']
+
+            # Pass the decoded user ID to the decorated function
+            return f(decoded_id_user, *args, **kwargs)
+
+        # apabila token expired
+        except jwt.ExpiredSignatureError:
+            return jsonify({'status': 401, 'message': 'Token has expired'}), 401
+
+        # apabila token invalid
+        except jwt.InvalidTokenError:
+            return jsonify({'status': 401, 'message': 'Invalid token'}), 401
+
+    return decorated
+
 @app.route("/user", methods=['GET'])
-def get_users():
-    token = request.headers.get('Authorization')
-    if not token or not token.startswith('Bearer '):
-        return jsonify({'status': 401, 'message': 'Invalid or missing bearer token'}), 401
+@token_required
+def get_users(decoded_id_user):
     
     try:
-        # Extract bearer token
-        token = token.split("Bearer ")[1]
-        
-        # Verifikasi token
-        token_payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        decoded_id_user = token_payload['id_user']
-
         # Fetch data user dari database
         sql = "SELECT id_user, nama, email, no_hp, id_role, id_bentuk_muka, path_foto, alamat FROM users"
         cur.execute(sql)
-        users = cur.fetchall()
+        users = cur.fetchall()     
 
         if users:
-
             # tampilkan data semua user dalam array
             response_data = []
             for user in users:
@@ -224,33 +240,15 @@ def get_users():
         else:
             return jsonify({'status': 400, 'message': 'No users found'}), 400
     
-    # apabila token expired
-    except jwt.ExpiredSignatureError:
-        return jsonify({'status': 401, 'message': 'Token has expired'}), 401
-    
-    # apabila token invalid
-    except jwt.InvalidTokenError:
-        return jsonify({'status': 401, 'message': 'Invalid token'}), 401
-
+    # apabila server error
+    except:
+        return jsonify({'status': 500, 'message': 'Internal Server Error'}), 500
 
 @app.route("/user/<id_user>", methods=['GET'])
-def get_user_id(id_user):
-    token = request.headers.get('Authorization')
-    if not token:
-        return jsonify({'status': 401, 'message': 'Authorization token is missing'}), 401
-    
+@token_required
+def get_user_id(decoded_id_user, id_user):
+
     try:
-        # Extract bearer token
-        token = token.split("Bearer ")[1]
-
-        # Verifikasi token
-        token_payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        decoded_id_user = token_payload['id_user']
-
-        # Check jika decode ID dari token sama dengan ID yang diminta
-        if decoded_id_user != id_user:
-            return jsonify({'status': 401, 'message': 'Invalid user ID'}), 401
-
         # Fetch data user dari database
         sql = "SELECT id_user, nama, email, no_hp, id_role, id_bentuk_muka, path_foto, alamat FROM users WHERE id_user = %s"
         values = (id_user,)
@@ -273,22 +271,15 @@ def get_user_id(id_user):
                     'id_bentuk_muka': id_bentuk_muka,
                     'path_foto': path_foto,
                     'alamat': alamat,
-
                 }
             }
             return jsonify(response), 200
         else:
             return jsonify({'status': 400, 'message': 'User not found'}), 400
-    
-    # apabila token expired
-    except jwt.ExpiredSignatureError:
-        return jsonify({'status': 401, 'message': 'Token has expired'}), 401
-    
-    # apabila token invalid
-    except jwt.InvalidTokenError:
-        return jsonify({'status': 401, 'message': 'Invalid token'}), 401
+    # apabila server error
+    except:
+        return jsonify({'status': 500, 'message': 'Internal Server Error'}), 500
         
-    
 @app.route("/toko", methods=["POST", "PATCH", "GET"])
 def getToko():
     # TODO: Masukin authentication user
