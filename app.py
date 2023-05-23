@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from functools import wraps
 
 from google.cloud import storage
-from werkzeug.utils import secure_filename
 import hashlib
 import MySQLdb
 import mimetypes
@@ -26,13 +25,42 @@ db = MySQLdb.connect(
 )
 
 cur = db.cursor()
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        if not token or not token.startswith('Bearer '):
+            return jsonify({'status': 401, 'message': 'Invalid or missing bearer token'}), 401
+
+        try:
+            # Extract bearer token
+            token = token.split("Bearer ")[1]
+
+            # Verifikasi token
+            token_payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+            decoded_id_user = token_payload['id_user']
+            decoded_id_toko = token_payload['id_toko']
+
+            # Pass the decoded user ID to the decorated function
+            return f(decoded_id_user, decoded_id_toko, *args, **kwargs)
+
+        # apabila token expired
+        except jwt.ExpiredSignatureError:
+            return jsonify({'status': 401, 'message': 'Token has expired'}), 401
+
+        # apabila token invalid
+        except jwt.InvalidTokenError:
+            return jsonify({'status': 401, 'message': 'Invalid token'}), 401
+
+    return decorated
         
 '''
 1. POST /register (done)
 2. POST /login (done)
 3. POST /foto (done)
-4. GET /user 
-5. GET /toko (connect firebase)
+4. GET /user (done)
+5. GET /toko (done)
 7. POST /rating
 9. GET /kacamata
 11. GET /role
@@ -131,26 +159,43 @@ def login():
         email, password = itemgetter('email', 'password')(content)
 
         # Ambil data dari SQL
-        sql = "SELECT id_user, email, password FROM users WHERE email = %s"
+        sql = "SELECT id_user, id_role, email, password FROM users WHERE email = %s"
         values = (email,)
 
         cur.execute(sql, values)
         user = cur.fetchone()
 
         if user:
-            id_user, _, password_db = user
+            id_user, id_role, _, password_db = user
+            id_toko = None
+            
             # Memverifikasi password
             if password_db != password:
                 return jsonify({'status': 401, 'message': 'Invalid email or password'}), 401
-
-             # Generate token
+            
+            # Generate token
             token_payload = {
                 'id_user': id_user,
+                'id_toko': id_toko,
                 'email': email,
-                'exp': datetime.utcnow() + timedelta(hours=1)  # Token berlaku selama 1 jam
+                'exp': datetime.utcnow() + timedelta(hours=24)
+                 # Token berlaku selama 24 jam
             }
-            token = jwt.encode(token_payload, app.config['SECRET_KEY'], algorithm='HS256')
+            
+            # Seller
+            if id_role == 2: 
+                sql = "SELECT id_toko, tanggal_pendaftaran FROM toko WHERE id_user = %s"
+                values = [id_user]
+                
+                cur.execute(sql, values)
+                id_toko = cur.fetchone()
+                
+                id_toko, _ = id_toko
+                print(id_toko)
+                
+                token_payload['id_toko'] = id_toko
 
+            token = jwt.encode(token_payload, app.config['SECRET_KEY'], algorithm='HS256')
 
             # Mengembalikan data pengguna
             response = {
@@ -158,10 +203,15 @@ def login():
                 'message': 'Login successful',
                 'data': {
                     'id_user': id_user,
+                    'id_toko': id_toko,
                     'email': email,
                     'token': token
-                }
+                }   
             }
+            
+            if id_role == 2:
+                response['data']['id_toko'] = id_toko
+            
             return jsonify(response), 200
         else:
             return jsonify({'status': 400, 'message': 'Email not found'}), 400
@@ -170,38 +220,9 @@ def login():
     except KeyError:
         return jsonify({'status': 400, 'message': 'All data must be filled'}), 400
 
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = request.headers.get('Authorization')
-        if not token or not token.startswith('Bearer '):
-            return jsonify({'status': 401, 'message': 'Invalid or missing bearer token'}), 401
-
-        try:
-            # Extract bearer token
-            token = token.split("Bearer ")[1]
-
-            # Verifikasi token
-            token_payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-            decoded_id_user = token_payload['id_user']
-
-            # Pass the decoded user ID to the decorated function
-            return f(decoded_id_user, *args, **kwargs)
-
-        # apabila token expired
-        except jwt.ExpiredSignatureError:
-            return jsonify({'status': 401, 'message': 'Token has expired'}), 401
-
-        # apabila token invalid
-        except jwt.InvalidTokenError:
-            return jsonify({'status': 401, 'message': 'Invalid token'}), 401
-
-    return decorated
-
 @app.route("/user", methods=['GET'])
 @token_required
-def get_users(decoded_id_user):
-    
+def get_users(decoded_id_user, decoded_id_toko):
     try:
         # Fetch data user dari database
         sql = "SELECT id_user, nama, email, no_hp, id_role, id_bentuk_muka, path_foto, alamat FROM users"
@@ -212,16 +233,16 @@ def get_users(decoded_id_user):
             # tampilkan data semua user dalam array
             response_data = []
             for user in users:
-                id_user, nama, email, no_hp, null, null, null, null = user
+                id_user, nama, email, no_hp, id_role, id_bentuk_muka, path_foto, alamat = user
                 user_data = {
                     'id_user': id_user,
                     'nama': nama,
                     'email': email,
                     'no_hp': no_hp,
-                    'id_role': null,
-                    'id_bentuk_muka': null,
-                    'path_foto': null,
-                    'alamat': null
+                    'id_role': id_role,
+                    'id_bentuk_muka': id_bentuk_muka,
+                    'path_foto': path_foto,
+                    'alamat': alamat
                 }
                 response_data.append(user_data)
 
@@ -246,8 +267,7 @@ def get_users(decoded_id_user):
 
 @app.route("/user/<id_user>", methods=['GET'])
 @token_required
-def get_user_id(decoded_id_user, id_user):
-
+def get_user_id(decoded_id_user, decoded_id_toko, id_user):
     try:
         # Fetch data user dari database
         sql = "SELECT id_user, nama, email, no_hp, id_role, id_bentuk_muka, path_foto, alamat FROM users WHERE id_user = %s"
@@ -281,11 +301,9 @@ def get_user_id(decoded_id_user, id_user):
         return jsonify({'status': 500, 'message': 'Internal Server Error'}), 500
         
 @app.route("/toko", methods=["POST", "PATCH", "GET"])
-def getToko():
-    # TODO: Masukin authentication user
-    
-    # id_user hasil decode jwt
-    id_user = "305198b04c38f3ce8f5742a960be366f"
+@token_required
+def getToko(decoded_id_user, decoded_id_toko):
+    id_user = decoded_id_user
     content = get_data_json(request)
     
     if request.method == "POST":
@@ -472,7 +490,6 @@ def upload_to_gcs(file_data, destination_blob_name, bucket_name = BUCKET_NAME):
     expiration = datetime.now() + timedelta(hours=1)
     signed_url = blob.generate_signed_url(expiration=expiration)
     return signed_url
-
 
 if __name__ == '__main__':
     app.run(host = "localhost", port=8000, debug=True)
