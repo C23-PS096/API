@@ -1,19 +1,23 @@
 from flask import Flask, request, jsonify
 from operator import itemgetter
 from datetime import datetime, timedelta
+
+from google.cloud import storage
+from werkzeug.utils import secure_filename
+import hashlib
+import MySQLdb
+import mimetypes
+import os
+
 import hashlib
 import MySQLdb
 import jwt
 
+BUCKET_NAME = "dev-optikoe-bucket"
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'optiqoe123'
     
-def get_data_json(req):
-    content_type = req.headers.get('Content-Type')
-    if (content_type == 'application/json'):
-        json = request.json
-        return json
-
 # DEFINE THE DATABASE CREDENTIALS
 db = MySQLdb.connect(
     user = 'root',
@@ -28,7 +32,7 @@ cur = db.cursor()
 '''
 1. POST /register (done)
 2. POST /login (done)
-3. POST /foto 
+3. POST /foto (done)
 4. GET /user 
 5. GET /toko (connect firebase)
 7. POST /rating
@@ -57,6 +61,7 @@ def register():
                 'status': 400,
                 'message': 'Password doesn’t match'
             }
+        id_user = hash_name(name)
     
         # hashing id_user
         currentDateTime = datetime.now()
@@ -82,6 +87,43 @@ def register():
         'status': 200,
         'message': 'Success'
     }, 200
+
+@app.route("/foto", methods=['POST'])
+def uploadFoto():
+args = request.args.get('type')
+pathFolder = ""
+
+if args == 'profil':
+    pathFolder = "foto-profil/"
+
+if args == 'produk':
+    pathFolder = "produk/"
+
+if request.method == 'POST':
+    file_upload = request.files['file']
+
+    # Use os.path.splitext to split the file name and extension
+    filename, file_ext = os.path.splitext(file_upload.filename)
+    name_file_secured = (hashlib.md5(filename.encode())).hexdigest()
+
+    if file_upload:
+        upload = upload_to_gcs(file_upload, pathFolder + name_file_secured + file_ext)
+        print(upload)
+        if upload:
+            return {
+                'status': 200,
+                'message': 'Success',
+                'data': {
+                    'folder': pathFolder, 
+                    'filename': name_file_secured 
+                }
+            }, 200
+
+        else:    
+            return {
+                'status': 400,
+                'message': "File upload failed"
+            }, 400
 
 @app.route("/login", methods = ['POST'])
 def login():
@@ -217,7 +259,7 @@ def get_user_id(id_user):
         user = cur.fetchone()
 
         if user:
-            id_user, nama, email, no_hp, null, null, null, null = user
+            id_user, nama, email, no_hp, id_role, id_bentuk_muka, path_foto, alamat = user
             # generate respons
             response = {
                 'status': 200,
@@ -227,10 +269,10 @@ def get_user_id(id_user):
                     'nama': nama,
                     'email': email,
                     'no_hp': no_hp,
-                    'id_role': null,
-                    'id_bentuk_muka': null,
-                    'path_foto': null,
-                    'alamat': null,
+                    'id_role': id_role,
+                    'id_bentuk_muka': id_bentuk_muka,
+                    'path_foto': path_foto,
+                    'alamat': alamat,
 
                 }
             }
@@ -245,6 +287,70 @@ def get_user_id(id_user):
     # apabila token invalid
     except jwt.InvalidTokenError:
         return jsonify({'status': 401, 'message': 'Invalid token'}), 401
+        
+    
+@app.route("/toko", methods=["GET", "POST"])
+def getToko():
+    if request.method == "POST":
+        return
+    
+    if request.method == "GET":
+        return
+
+@app.route("/toko/<id_toko>", methods=["GET"])
+def getTokoById(id_toko):
+    return id_toko
+
+@app.route("/rating", methods=["GET", "POST"])
+def rating():
+    return
+
+@app.route("/rating/<id_rating>", methods=["GET"])
+def getRatingById(id_rating):
+    return id_rating
+
+@app.route("/kacamata", methods=["GET"])
+def getKacamata():
+    return
+
+@app.route("/muka", methods=["GET"])
+def getMuka():
+    return
+
+def get_data_json(req):
+    content_type = req.headers.get('Content-Type')
+    if (content_type == 'application/json'):
+        json = req.json
+        return json
+    
+def hash_name(name):
+    # hashing id_user
+    currentDateTime = datetime.now()
+    hashing = hashlib.md5((name + str(currentDateTime)).encode())
+    id_user = hashing.hexdigest()
+    return id_user
+
+def upload_to_gcs(file_data, destination_blob_name, bucket_name = BUCKET_NAME):
+    # Create a client
+    client = storage.Client.from_service_account_json('service_account.json')
+    
+    # Get the bucket
+    bucket = client.get_bucket(bucket_name)
+    
+    # Create a blob object with the desired destination blob name
+    blob = bucket.blob(destination_blob_name)
+    
+    # Set the content type based on file extension
+    content_type, _ = mimetypes.guess_type(file_data.filename)
+    blob.content_type = content_type
+    
+    # Upload the file data to the blob
+    blob.upload_from_file(file_data)
+    
+    expiration = datetime.now() + timedelta(hours=1)
+    signed_url = blob.generate_signed_url(expiration=expiration)
+    return signed_url
+
 
 if __name__ == '__main__':
     app.run(host = "localhost", port=8000, debug=True)
