@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 import hashlib
 import MySQLdb
 import mimetypes
+import os
 
 BUCKET_NAME = "dev-optikoe-bucket"
 
@@ -23,8 +24,8 @@ db = MySQLdb.connect(
 cur = db.cursor()
         
 '''
-1. POST /register (bikin cadangan)
-3. POST /foto 
+1. POST /register (done)
+3. POST /foto (done)
 5. GET /toko (connect firebase)
 7. POST /rating
 9. GET /kacamata
@@ -53,7 +54,7 @@ def register():
                 'message': 'Password doesn’t match'
             }
 
-        id_user = createId(name)
+        id_user = hash_name(name)
         
         # sql
         sql = "INSERT INTO users(id_user, nama, email, no_hp, password) VALUES (%s, %s, %s, %s, %s)"
@@ -88,15 +89,22 @@ def uploadFoto():
     
     if request.method == 'POST':
         file_upload = request.files['file']
-        name_file = secure_filename(file_upload.filename)
+        
+        # Use os.path.splitext to split the file name and extension
+        filename, file_ext = os.path.splitext(file_upload.filename)
+        name_file_secured = (hashlib.md5(filename.encode())).hexdigest()
         
         if file_upload:
-            upload = upload_to_gcs(file_upload, pathFolder + name_file)
+            upload = upload_to_gcs(file_upload, pathFolder + name_file_secured + file_ext)
             print(upload)
             if upload:
                 return {
                     'status': 200,
-                    'message': 'Success'
+                    'message': 'Success',
+                    'data': {
+                        'folder': pathFolder, 
+                        'filename': name_file_secured 
+                    }
                 }, 200
                 
             else:    
@@ -108,7 +116,11 @@ def uploadFoto():
     
 @app.route("/toko", methods=["GET", "POST"])
 def getToko():
-    return
+    if request.method == "POST":
+        return
+    
+    if request.method == "GET":
+        return
 
 @app.route("/toko/<id_toko>", methods=["GET"])
 def getTokoById(id_toko):
@@ -136,7 +148,7 @@ def get_data_json(req):
         json = req.json
         return json
     
-def createId(name):
+def hash_name(name):
     # hashing id_user
     currentDateTime = datetime.now()
     hashing = hashlib.md5((name + str(currentDateTime)).encode())
