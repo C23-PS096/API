@@ -289,17 +289,148 @@ def get_user_id(id_user):
         return jsonify({'status': 401, 'message': 'Invalid token'}), 401
         
     
-@app.route("/toko", methods=["GET", "POST"])
+@app.route("/toko", methods=["POST", "PATCH", "GET"])
 def getToko():
+    # TODO: Masukin authentication user
+    
+    # id_user hasil decode jwt
+    id_user = "305198b04c38f3ce8f5742a960be366f"
+    content = get_data_json(request)
+    
     if request.method == "POST":
-        return
+        try: 
+            # ambil values dari json nya
+            nama_toko, deskripsi = itemgetter('nama_toko', 'deskripsi') (content) 
+            
+            id_toko = hash_name(nama_toko)
+            
+            sql = "INSERT INTO toko(id_toko, nama_toko, id_user, deskripsi) VALUES(%s, %s, %s, %s)"
+            values = (id_toko, nama_toko, id_user, deskripsi)
+            
+            cur.execute(sql, values)
+            db.commit()
+            
+        # kalau values json nya gaada
+        except KeyError: 
+            return {
+            'status': 400,  
+            'message': 'All data must be filled'
+            }, 400
+        
+        # berhasil semuanya
+        return {
+            'status': 200,
+            'message': 'Success',
+            'data': {
+                'id_toko': id_toko
+            }
+        }, 200
+    
+    
+    if request.method == "PATCH":
+        # TODO: Masukin authentication seller
+        
+        # id_toko hasil decode jwt
+        id_toko = "d7d9f8ef6d3c3e5fb237507512ecb952"
+        try: 
+            # ambil values dari json nya
+            nama_toko, deskripsi, path_foto = itemgetter('nama_toko', 'deskripsi', 'path_foto') (content) 
+            
+            id_toko = hash_name(nama_toko)
+            
+            sql = "UPDATE toko SET nama_toko = %s, deskripsi = %s, path_foto = %s WHERE id_toko = %s"
+            values = (nama_toko, deskripsi, path_foto, id_toko)
+            
+            cur.execute(sql, values)
+            db.commit()
+            
+        # kalau values json nya gaada
+        except KeyError: 
+            return {
+            'status': 400,  
+            'message': 'All data must be filled'
+            }, 400
+        
+        # berhasil semuanya
+        return {
+            'status': 200,
+            'message': 'Success',
+        }, 200   
     
     if request.method == "GET":
-        return
+        sql = "SELECT id_toko, nama_toko, path_foto, rating, id_user, deskripsi, tanggal_pendaftaran FROM toko"
+        
+        cur.execute(sql)
+        semua_toko = cur.fetchall()
+        
+        if semua_toko:    
+            response_data = []
+            
+            for toko in semua_toko:
+                id_toko, nama_toko, path_foto, rating, id_user, deskripsi, tanggal_pendaftaran = toko
+                data_toko = {
+                        'id_toko': id_toko,
+                        'nama_toko': nama_toko,
+                        'path_foto': path_foto,
+                        'rating': rating,
+                        'id_user': id_user,
+                        'deskripsi': deskripsi,
+                        'tanggal_pendaftaran': tanggal_pendaftaran
+                    }
+                response_data.append(data_toko)
+                
+            return {
+                'status': 200, 
+                'message': "Success",
+                'data': response_data
+            }, 200
+        
+        else:
+            return {
+                'status': '400',
+                'message': 'Toko not found',
+                'data': None
+            }, 400
 
 @app.route("/toko/<id_toko>", methods=["GET"])
 def getTokoById(id_toko):
-    return id_toko
+    # TODO: Authorization    
+    sql = "SELECT * FROM toko WHERE id_toko = %s"
+    values = [id_toko]
+
+    cur.execute(sql, values)
+    toko = cur.fetchall()
+    
+    print(toko)
+    
+    if toko:    
+        response_data = []
+        
+        id_toko, nama_toko, path_foto,  rating, id_user, deskripsi, tanggal_pendaftaran = toko[0]
+        data_toko = {
+                'id_toko': id_toko,
+                'nama_toko': nama_toko,
+                'path_foto': path_foto,
+                'rating': rating,
+                'id_user': id_user,
+                'deskripsi': deskripsi,
+                'tanggal_pendaftaran': tanggal_pendaftaran
+            }
+        
+        response_data.append(data_toko)
+            
+        return jsonify({
+            'status': 200, 
+            'message': "Success",
+            'data': response_data
+        }), 200
+    
+    else:
+        return jsonify({
+            'status': '400',
+            'message': 'Toko not found',
+            'data': None
+        }), 400
 
 @app.route("/rating", methods=["GET", "POST"])
 def rating():
