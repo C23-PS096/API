@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS rating(
     id_produk INT NOT NULL,
     nilai_rating INT NOT NULL,
     komentar VARCHAR(50),
+    tanggal TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     PRIMARY KEY(id_rating)
 );
@@ -133,3 +134,6 @@ ADD FOREIGN KEY (id_user) REFERENCES users(id_user);
 ALTER TABLE kecocokan
 ADD FOREIGN KEY (id_bentuk_kacamata) REFERENCES bentuk_kacamata(id_bentuk_kacamata),
 ADD FOREIGN KEY (id_bentuk_muka) REFERENCES bentuk_muka(id_bentuk_muka);
+
+-- ADD DATA
+INSERT INTO roles(id_role, nama_role) VALUES ("1", "user"), ("2", "seller"), ("3", "admin")
