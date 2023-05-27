@@ -190,12 +190,14 @@ def login():
                 values = [id_user]
 
                 cur.execute(sql, values)
-                id_toko = cur.fetchone()
+                row_id_toko = cur.fetchone()
 
-                id_toko, _ = id_toko
-                print(id_toko)
+                # memeriksa jika row_id_toko not None
+                if row_id_toko is not None:  
+                    id_toko, _ = row_id_toko
+                    print(id_toko)
 
-                token_payload["id_toko"] = id_toko
+                    token_payload["id_toko"] = id_toko
 
             token = jwt.encode(
                 token_payload, app.config["SECRET_KEY"], algorithm="HS256"
@@ -218,7 +220,7 @@ def login():
 
             return jsonify(response), 200
         else:
-            return jsonify({"status": 400, "message": "Email not found"}), 400
+            return jsonify({"status": 400, "message": "Invalid email or password"}), 400
 
     # Jika values JSON tidak ada
     except KeyError:
