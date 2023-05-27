@@ -637,6 +637,51 @@ def rating(decoded_id_user, decoded_id_toko):
 
         return
 
+@app.route('/produk', methods=['POST'])
+@token_required
+def create_produk(decoded_id_user, decoded_id_toko):
+    id_user = decoded_id_user
+    content = get_data_json(request)
+
+    if request.method == "POST":
+        try:
+            # Ambil values dari JSON
+            nama_produk, harga, deskripsi = itemgetter("nama_produk", "harga", "deskripsi")(content)
+
+            id_produk = hash_name(nama_produk)
+
+            # Memeriksa apakah pengguna memiliki peran penjual (id_role=2)
+            sql = "SELECT id_role FROM users WHERE id_user = %s"  # Assuming the column name is 'id_user'
+            values = (id_user,)
+            cur.execute(sql, values)
+            result = cur.fetchone()
+
+            if result and result[0] == 2:
+                # Menjalankan query INSERT untuk menyimpan produk ke database
+                sql = "INSERT INTO produk (id_toko, nama_produk, harga, id_bentuk_kacamata, id_foto, deskripsi, stok, is_active) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+                values = (None, nama_produk, harga, None, None, deskripsi, None, None)
+                cur.execute(sql, values)
+
+                # Commit perubahan ke database
+                db.commit()
+
+                sql = "INSERT INTO toko (id_produk, nama_produk, harga, deskripsi) VALUES (%s, %s, %s, %s)"
+                values = (id_produk, nama_produk, harga, deskripsi)
+                cur.execute(sql, values)
+
+                # Commit perubahan ke database
+                db.commit()
+
+                # Berhasil semuanya
+                return jsonify({"status": 200, "message": "Product has been add", "data": {"id_toko": id_produk}}), 200
+            else:
+                return jsonify({"status": 403, "message": "Only seller can access this feature"}), 403
+
+        # Kalau values JSON tidak ada
+        except KeyError:
+            return jsonify({"status": 400, "message": "All data must be filled"}), 400
+
+
 @app.route("/rating/<id_rating>", methods=["GET"])
 @token_required
 def getRatingById(decoded_id_user, decoded_id_token, id_rating):
