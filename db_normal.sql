@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS bentuk_muka(
 );
 
 CREATE TABLE IF NOT EXISTS produk(
-    id_produk INT NOT NULL,
+    id_produk VARCHAR(32) NOT NULL,
     id_toko VARCHAR(32) NOT NULL,
     nama_produk VARCHAR(30) NOT NULL,
     id_bentuk_kacamata INT, 
@@ -56,9 +56,9 @@ CREATE TABLE IF NOT EXISTS produk(
 );
 
 CREATE TABLE IF NOT EXISTS rating(
-    id_rating INT NOT NULL,
+    id_rating VARCHAR(32) NOT NULL,
     id_user VARCHAR(32) NOT NULL,
-    id_produk INT NOT NULL,
+    id_produk VARCHAR(32) NOT NULL,
     nilai_rating INT NOT NULL,
     komentar VARCHAR(50),
     tanggal TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS rating(
 
 CREATE TABLE IF NOT EXISTS foto_produk(
     id_foto_produk INT NOT NULL,
-    id_produk INT NOT NULL,
+    id_produk VARCHAR(32) NOT NULL,
     path_foto VARCHAR(40),
 
     PRIMARY KEY (id_foto_produk)
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS status_history(
 CREATE TABLE IF NOT EXISTS history(
     id_history INT NOT NULL,
     id_user VARCHAR(32) NOT NULL,
-    id_produk INT NOT NULL,
+    id_produk VARCHAR(32) NOT NULL,
     tanggal TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     jumlah_produk INT unsigned NOT NULL,
     id_status INT NOT NULL,
