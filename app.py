@@ -667,7 +667,7 @@ def rating(decoded_id_user, decoded_id_toko):
 
         return
 
-@app.route('/produk', methods=['POST'])
+@app.route('/produk', methods=['POST', 'GET'])
 @token_required
 def create_produk(decoded_id_user, decoded_id_toko):
     id_user = decoded_id_user
@@ -704,6 +704,43 @@ def create_produk(decoded_id_user, decoded_id_toko):
         # Kalau values JSON tidak ada
         except KeyError:
             return jsonify({"status": 400, "message": "All data must be filled"}), 400
+    
+    if request.method == "GET":
+        sql = "SELECT id_produk, id_toko, nama_produk, id_bentuk_kacamata, harga, deskripsi, stok, is_active FROM produk"
+
+        cur.execute(sql)
+        semua_produk = cur.fetchall()
+
+        if semua_produk:
+            response_data = []
+
+            for produk in semua_produk:
+                (
+                    id_produk,
+                    id_toko,
+                    nama_produk,
+                    id_bentuk_kacamata,
+                    harga,
+                    deskripsi,
+                    stok,
+                    is_active,
+                ) = produk
+                data_produk = {
+                    "id_produk": id_produk,
+                    "id_toko": id_toko,
+                    "nama_produk": nama_produk,
+                    "id_bentuk_kacamata": id_bentuk_kacamata,
+                    "harga": harga,
+                    "deskripsi": deskripsi,
+                    "stok": stok,
+                    "is_active": is_active,
+                }
+                response_data.append(data_produk)
+
+            return {"status": 200, "message": "Success", "data": response_data}, 200
+
+        else:
+            return {"status": "400", "message": "Product not found", "data": None}, 400
 
 @app.route("/rating/<id_rating>", methods=["GET"])
 @token_required
