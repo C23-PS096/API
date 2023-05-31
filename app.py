@@ -889,8 +889,7 @@ def get_produk_id(id_produk):
         return jsonify({"status": 500, "message": "Internal Server Error"}), 500
 
 @app.route("/produk/toko/<id_toko>", methods=["GET"])
-@token_required
-def get_produk_by_toko(decoded_id_user, decoded_id_toko, id_toko):
+def get_produk_by_toko(id_toko):
     try:
         # Fetch data user dari database
         sql = "SELECT id_produk, id_toko, nama_produk, id_bentuk_kacamata, harga, deskripsi, stok, is_active FROM produk WHERE id_toko = %s"
