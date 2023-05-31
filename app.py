@@ -67,7 +67,7 @@ def token_required(f):
 3. POST /foto (done)
 4. GET /user (done)
 5. GET /toko (done)
-7. POST /rating
+7. POST /rating (done)
 9. GET /kacamata
 11. GET /role
 
@@ -95,18 +95,26 @@ def register():
         if password != confirmation_password:
             return {"status": 400, "message": "Password doesn’t match"}
         id_user = hash_name(name)
-
-        # hashing id_user
-        currentDateTime = datetime.now()
-        hashing = hashlib.md5((name + str(currentDateTime)).encode())
-        id_user = hashing.hexdigest()
-
-        # sql
-        sql = "INSERT INTO users(id_user, nama, email, no_hp, password) VALUES (%s, %s, %s, %s, %s)"
-        values = (id_user, name, email, password, phone_number)
-
+        
+        sql = "SELECT * FROM users WHERE email = %s"
+        values = [email]
+        
         cur.execute(sql, values)
-        db.commit()
+        email_duplicated = cur.fetchall()
+        
+        if email_duplicated:
+            return jsonify({
+                "status": 400,
+                "message": "Email already registered"
+            }), 400
+        
+        else:
+            # INSERT DATA USER
+            sql = "INSERT INTO users(id_user, nama, email, no_hp, password) VALUES (%s, %s, %s, %s, %s)"
+            values = (id_user, name, email, password, phone_number)
+
+            cur.execute(sql, values)
+            db.commit()
 
     # kalau values json nya gaada
     except KeyError:
@@ -564,7 +572,7 @@ def getTokoById(decoded_id_user, decoded_id_toko, id_toko):
             400,
         )
 
-
+# TODO: tambahin beli (haffif)
 @app.route("/beli", methods=["POST"])
 def beliProduk():
     return
@@ -624,12 +632,34 @@ def rating(decoded_id_user, decoded_id_toko):
 
             id_rating = hash_name(id_produk + decoded_id_user)
 
-            sql = "INSERT INTO rating(id_rating, id_user, id_produk, nilai_rating, komentar) VALUES (%s, %s, %s, %s, %i, %s)"
+            sql = "INSERT INTO rating(id_rating, id_user, id_produk, nilai_rating, komentar) VALUES (%s, %s, %s, %s, %s)"
             values = [id_rating, decoded_id_user, id_produk, nilai_rating, komentar]
-
-            cur.execute(sql, values)
             
-            # TODO: add logic for rating
+            try: 
+                cur.execute(sql, values)
+                
+                if cur: 
+                    db.commit()
+                    return jsonify({
+                        'status': 200,
+                        'message': 'Success'
+                    }), 200
+                
+                else:
+                    return jsonify({
+                        'status': 500,
+                        'message': 'Server error'
+                    }), 500
+                    
+            # Foreign Key Error: jika produk tidak ditemukan
+            except MySQLdb.IntegrityError:
+                return jsonify({
+                    'status': '404',
+                    'message': 'Produk tidak ditemukan'
+                }), 404
+            
+            finally:
+                cur.close()
 
         # Jika values JSON tidak ada
         except KeyError:
@@ -678,7 +708,46 @@ def create_produk(decoded_id_user, decoded_id_toko):
 @app.route("/rating/<id_rating>", methods=["GET"])
 @token_required
 def getRatingById(decoded_id_user, decoded_id_token, id_rating):
-    return id_rating
+    if request.method == "GET":
+        sql = "SELECT * FROM rating WHERE id_rating = %s"
+        values = [id_rating]
+        cur.execute(sql, values)
+
+        rating = cur.fetchall()
+        if rating:
+            response_data = []
+
+            for oneRating in rating:
+                (
+                    id_rating,
+                    id_user,
+                    id_produk,
+                    nilai_rating,
+                    komentar,
+                    tanggal,
+                ) = oneRating
+
+                data_rating = {
+                    "id_rating": id_rating,
+                    "id_user": id_user,
+                    "id_produk": id_produk,
+                    "nilai_rating": nilai_rating,
+                    "komentar": komentar,
+                    "tanggal": tanggal,
+                }
+
+                response_data.append(data_rating)
+
+            return (
+                jsonify({"status": 200, "message": "Success", "data": response_data}),
+                200,
+            )
+
+        else:
+            return (
+                jsonify({"status": 400, "message": "Data not found", "data": None}),
+                400,
+            )
 
 
 @app.route("/kacamata", methods=["GET"])
