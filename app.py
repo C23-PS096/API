@@ -95,19 +95,16 @@ def register():
         if password != confirmation_password:
             return {"status": 400, "message": "Password doesn’t match"}
         id_user = hash_name(name)
-        
+
         sql = "SELECT * FROM users WHERE email = %s"
         values = [email]
-        
+
         cur.execute(sql, values)
         email_duplicated = cur.fetchall()
-        
+
         if email_duplicated:
-            return jsonify({
-                "status": 400,
-                "message": "Email already registered"
-            }), 400
-        
+            return jsonify({"status": 400, "message": "Email already registered"}), 400
+
         else:
             # INSERT DATA USER
             sql = "INSERT INTO users(id_user, nama, email, no_hp, password) VALUES (%s, %s, %s, %s, %s)"
@@ -138,11 +135,11 @@ def uploadFoto():
     if request.method == "POST":
         file_upload = request.files["file"]
 
-        # Use os.path.splitext to split the file name and extension
-        filename, file_ext = os.path.splitext(file_upload.filename)
-        name_file_secured = (hashlib.md5(filename.encode())).hexdigest()
-
         if file_upload:
+            # Use os.path.splitext to split the file name and extension
+            filename, file_ext = os.path.splitext(file_upload.filename)
+            name_file_secured = (hashlib.md5(filename.encode())).hexdigest()
+            
             upload = upload_to_gcs(
                 file_upload, pathFolder + name_file_secured + file_ext
             )
@@ -152,10 +149,10 @@ def uploadFoto():
                     "status": 200,
                     "message": "Success",
                     "data": {"folder": pathFolder, "filename": name_file_secured},
-                }, 200
+                }
 
             else:
-                return {"status": 400, "message": "File upload failed"}, 400
+                return {"status": 400, "message": "File upload failed"}
 
 
 @app.route("/login", methods=["POST"])
@@ -201,7 +198,7 @@ def login():
                 row_id_toko = cur.fetchone()
 
                 # memeriksa jika row_id_toko not None
-                if row_id_toko is not None:  
+                if row_id_toko is not None:
                     id_toko, _ = row_id_toko
                     print(id_toko)
 
@@ -577,7 +574,6 @@ def getTokoById(decoded_id_user, decoded_id_toko, id_toko):
 def beliProduk():
     return
 
-
 @app.route("/rating", methods=["GET", "POST"])
 @token_required
 def rating(decoded_id_user, decoded_id_toko):
@@ -634,59 +630,50 @@ def rating(decoded_id_user, decoded_id_toko):
 
             sql = "INSERT INTO rating(id_rating, id_user, id_produk, nilai_rating, komentar) VALUES (%s, %s, %s, %s, %s)"
             values = [id_rating, decoded_id_user, id_produk, nilai_rating, komentar]
-            
-            try: 
+
+            try:
                 cur.execute(sql, values)
-                
-                if cur: 
+
+                if cur:
                     db.commit()
-                    
+
                     sql_select_toko = "SELECT toko.id_toko FROM toko JOIN produk ON toko.id_toko = produk.id_toko WHERE id_produk = %s"
                     values_select_toko = [id_produk]
-                    
+
                     cur.execute(sql_select_toko, values_select_toko)
                     id_toko = cur.fetchone()
-                    
-                    if(id_toko):
+
+                    if id_toko:
                         # Update Rating Toko
-                        sql_update_rating = '''
+                        sql_update_rating = """
                             UPDATE toko 
                             SET rating =  (SELECT AVG(rating.nilai_rating) FROM rating  
                                             JOIN produk ON produk.id_produk = rating.id_produk 
                                             WHERE id_toko = %s)
 
                             WHERE id_toko = %s
-                        '''
+                        """
                         values_update_rating = [id_toko, id_toko]
-                        
-                        try: 
+
+                        try:
                             cur.execute(sql_update_rating, values_update_rating)
                             db.commit()
-                            
-                            return jsonify({
-                                'status': 200,
-                                'message': 'Success'
-                            }), 200
-                        
+
+                            return jsonify({"status": 200, "message": "Success"}), 200
+
                         except:
-                            return jsonify({
-                                'status': 500,
-                                'message': 'Server error'
-                            }), 500
-                
+                            return (
+                                jsonify({"status": 500, "message": "Server error"}),
+                                500,
+                            )
+
                 else:
-                    return jsonify({
-                        'status': 500,
-                        'message': 'Server error'
-                    }), 500
-                    
+                    return jsonify({"status": 500, "message": "Server error"}), 500
+
             # Foreign Key Error: jika produk tidak ditemukan
             except MySQLdb.IntegrityError:
-                return jsonify({
-                    'status': '404',
-                    'message': 'Product not found'
-                }), 404
-            
+                return jsonify({"status": "404", "message": "Product not found"}), 404
+
             finally:
                 cur.close()
 
@@ -696,17 +683,70 @@ def rating(decoded_id_user, decoded_id_toko):
 
         return
 
-@app.route('/produk', methods=['POST', 'GET'])
+
+@app.route("/rating/<id_rating>", methods=["GET"])
+@token_required
+def getRatingById(decoded_id_user, decoded_id_token, id_rating):
+    if request.method == "GET":
+        sql = "SELECT * FROM rating WHERE id_rating = %s"
+        values = [id_rating]
+        cur.execute(sql, values)
+
+        rating = cur.fetchall()
+        if rating:
+            response_data = []
+
+            for oneRating in rating:
+                (
+                    id_rating,
+                    id_user,
+                    id_produk,
+                    nilai_rating,
+                    komentar,
+                    tanggal,
+                ) = oneRating
+
+                data_rating = {
+                    "id_rating": id_rating,
+                    "id_user": id_user,
+                    "id_produk": id_produk,
+                    "nilai_rating": nilai_rating,
+                    "komentar": komentar,
+                    "tanggal": tanggal,
+                }
+
+                response_data.append(data_rating)
+
+            return (
+                jsonify({"status": 200, "message": "Success", "data": response_data}),
+                200,
+            )
+
+        else:
+            return (
+                jsonify({"status": 400, "message": "Data not found", "data": None}),
+                400,
+            )
+
+@app.route("/produk", methods=["POST", "GET"])
 @token_required
 def create_produk(decoded_id_user, decoded_id_toko):
     id_user = decoded_id_user
     id_toko = decoded_id_toko
     content = get_data_json(request)
-
+    
+    if id_toko is None:
+        return jsonify({
+            'status': 401,
+            'message': "UNAUTHORIZED"
+        }), 401
+        
     if request.method == "POST":
         try:
             # Ambil values dari JSON
-            id_toko, nama_produk, harga, deskripsi, stok = itemgetter("id_toko", "nama_produk", "harga", "deskripsi", "stok")(content)
+            nama_produk, harga, deskripsi, stok = itemgetter(
+                "nama_produk", "harga", "deskripsi", "stok"
+            )(content)
 
             id_produk = hash_name(nama_produk)
 
@@ -719,21 +759,47 @@ def create_produk(decoded_id_user, decoded_id_toko):
             if result and result[0] == 2:
                 # Menjalankan query INSERT untuk menyimpan produk ke database
                 sql = "INSERT INTO produk (id_produk, id_toko, nama_produk, id_bentuk_kacamata, harga, deskripsi, stok, is_active) VALUES (%s, (SELECT id_toko FROM toko WHERE id_toko = %s), %s, %s, %s, %s, %s, %s)"
-                values = (id_produk, id_toko, nama_produk, None, harga, deskripsi, stok, 1)
+                values = (
+                    id_produk,
+                    id_toko,
+                    nama_produk,
+                    None,
+                    harga,
+                    deskripsi,
+                    stok,
+                    1,
+                )
                 cur.execute(sql, values)
 
                 # Commit perubahan ke database
                 db.commit()
 
                 # Berhasil semuanya
-                return jsonify({"status": 200, "message": "Product has been added", "data": {"id_product": id_produk}}), 200
+                return (
+                    jsonify(
+                        {
+                            "status": 200,
+                            "message": "Product has been added",
+                            "data": {"id_product": id_produk},
+                        }
+                    ),
+                    200,
+                )
             else:
-                return jsonify({"status": 403, "message": "Only sellers can access this feature"}), 403
+                return (
+                    jsonify(
+                        {
+                            "status": 403,
+                            "message": "Only sellers can access this feature",
+                        }
+                    ),
+                    403,
+                )
 
         # Kalau values JSON tidak ada
-        except KeyError:
+        except TypeError:
             return jsonify({"status": 400, "message": "All data must be filled"}), 400
-    
+
     if request.method == "GET":
         sql = "SELECT id_produk, id_toko, nama_produk, id_bentuk_kacamata, harga, deskripsi, stok, is_active FROM produk"
 
@@ -770,7 +836,7 @@ def create_produk(decoded_id_user, decoded_id_toko):
 
         else:
             return {"status": "400", "message": "Product not found", "data": None}, 400
-        
+
 @app.route("/produk/<id_produk>", methods=["GET"])
 @token_required
 def get_produk_id(decoded_id_user, decoded_id_toko, id_produk):
@@ -821,7 +887,7 @@ def get_produk_id(decoded_id_user, decoded_id_toko, id_produk):
     # apabila server error
     except:
         return jsonify({"status": 500, "message": "Internal Server Error"}), 500
-    
+
 @app.route("/produk/toko/<id_toko>", methods=["GET"])
 @token_required
 def get_produk_by_toko(decoded_id_user, decoded_id_toko, id_toko):
@@ -873,59 +939,95 @@ def get_produk_by_toko(decoded_id_user, decoded_id_toko, id_toko):
     except:
         return jsonify({"status": 500, "message": "Internal Server Error"}), 500
 
-@app.route("/rating/<id_rating>", methods=["GET"])
-@token_required
-def getRatingById(decoded_id_user, decoded_id_token, id_rating):
-    if request.method == "GET":
-        sql = "SELECT * FROM rating WHERE id_rating = %s"
-        values = [id_rating]
-        cur.execute(sql, values)
-
-        rating = cur.fetchall()
-        if rating:
-            response_data = []
-
-            for oneRating in rating:
-                (
-                    id_rating,
-                    id_user,
-                    id_produk,
-                    nilai_rating,
-                    komentar,
-                    tanggal,
-                ) = oneRating
-
-                data_rating = {
-                    "id_rating": id_rating,
-                    "id_user": id_user,
-                    "id_produk": id_produk,
-                    "nilai_rating": nilai_rating,
-                    "komentar": komentar,
-                    "tanggal": tanggal,
-                }
-
-                response_data.append(data_rating)
-
-            return (
-                jsonify({"status": 200, "message": "Success", "data": response_data}),
-                200,
-            )
-
-        else:
-            return (
-                jsonify({"status": 400, "message": "Data not found", "data": None}),
-                400,
-            )
-
 
 @app.route("/kacamata", methods=["GET"])
 def getKacamata():
-    return
+    sql = "SELECT * FROM bentuk_kacamata"
+    cur.execute(sql)
+
+    rows = cur.fetchall()
+
+    if rows:
+        response_data = []
+
+        for row in rows:
+            (id_bentuk_kacamata, bentuk_kacamata) = row
+
+            data_kacamata = {
+                "id_bentuk_kacamata": id_bentuk_kacamata,
+                "bentuk_kacamata": bentuk_kacamata,
+            }
+
+            response_data.append(data_kacamata)
+
+        return (
+            jsonify({"status": 200, "message": "Success", "data": response_data}),
+            200,
+        )
+
+    else:
+        return (
+            jsonify({"status": 400, "message": "Data not found", "data": None}),
+            400,
+        )
+
+
+@app.route("/role", methods=["GET"])
+def getRole():
+    sql = "SELECT * FROM roles"
+    cur.execute(sql)
+
+    rows = cur.fetchall()
+
+    if rows:
+        response_data = []
+
+        for row in rows:
+            (id_role, nama_role) = row
+
+            data_role = {"id_role": id_role, "nama_role": nama_role}
+
+            response_data.append(data_role)
+
+        return (
+            jsonify({"status": 200, "message": "Success", "data": response_data}),
+            200,
+        )
+
+    else:
+        return (
+            jsonify({"status": 400, "message": "Data not found", "data": None}),
+            400,
+        )
 
 
 @app.route("/muka", methods=["GET"])
 def getMuka():
-    return
+    sql = "SELECT * FROM bentuk_muka"
+    cur.execute(sql)
+
+    rows = cur.fetchall()
+
+    if rows:
+        response_data = []
+
+        for row in rows:
+            (id_bentuk_muka, bentuk_muka) = row
+
+            data_muka = {"id_bentuk_muka": id_bentuk_muka, "bentuk_muka": bentuk_muka}
+
+            response_data.append(data_muka)
+
+        return (
+            jsonify({"status": 200, "message": "Success", "data": response_data}),
+            200,
+        )
+
+    else:
+        return (
+            jsonify({"status": 400, "message": "Data not found", "data": None}),
+            400,
+        )
 
 
 def get_data_json(req):
