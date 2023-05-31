@@ -677,7 +677,7 @@ def create_produk(decoded_id_user, decoded_id_toko):
     if request.method == "POST":
         try:
             # Ambil values dari JSON
-            nama_produk, harga, deskripsi = itemgetter("nama_produk", "harga", "deskripsi")(content)
+            nama_produk, harga, deskripsi, stok = itemgetter("nama_produk", "harga", "deskripsi", "stok")(content)
 
             id_produk = hash_name(nama_produk)
 
@@ -689,8 +689,8 @@ def create_produk(decoded_id_user, decoded_id_toko):
 
             if result and result[0] == 2:
                 # Menjalankan query INSERT untuk menyimpan produk ke database
-                sql = "INSERT INTO produk (id_toko, nama_produk, id_bentuk_kacamata, harga, deskripsi, stok, is_active) VALUES ((SELECT id_toko FROM toko WHERE id_toko = %s), %s, %s, %s, %s, %s, %s)"
-                values = (id_toko, nama_produk, None, harga, deskripsi, None, None)
+                sql = "INSERT INTO produk (id_produk, id_toko, nama_produk, id_bentuk_kacamata, harga, deskripsi, stok, is_active) VALUES (%s, (SELECT id_toko FROM toko WHERE id_toko = %s), %s, %s, %s, %s, %s, %s)"
+                values = (id_produk, id_toko, nama_produk, None, harga, deskripsi, stok, 1)
                 cur.execute(sql, values)
 
                 # Commit perubahan ke database
