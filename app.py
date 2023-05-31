@@ -728,20 +728,20 @@ def getRatingById(decoded_id_user, decoded_id_token, id_rating):
                 400,
             )
 
-@app.route("/produk", methods=["POST", "GET"])
+@app.route("/produk", methods=["POST"])
 @token_required
 def create_produk(decoded_id_user, decoded_id_toko):
     id_user = decoded_id_user
     id_toko = decoded_id_toko
     content = get_data_json(request)
     
-    if id_toko is None:
-        return jsonify({
-            'status': 401,
-            'message': "UNAUTHORIZED"
-        }), 401
-        
     if request.method == "POST":
+        if id_toko is None:
+            return jsonify({
+                'status': 401,
+                'message': "UNAUTHORIZED"
+            }), 401
+        
         try:
             # Ambil values dari JSON
             nama_produk, harga, deskripsi, stok = itemgetter(
@@ -799,7 +799,8 @@ def create_produk(decoded_id_user, decoded_id_toko):
         # Kalau values JSON tidak ada
         except TypeError:
             return jsonify({"status": 400, "message": "All data must be filled"}), 400
-
+@app.route("/produk", methods=["GET"])
+def getProduk():
     if request.method == "GET":
         sql = "SELECT id_produk, id_toko, nama_produk, id_bentuk_kacamata, harga, deskripsi, stok, is_active FROM produk"
 
@@ -838,8 +839,7 @@ def create_produk(decoded_id_user, decoded_id_toko):
             return {"status": "400", "message": "Product not found", "data": None}, 400
 
 @app.route("/produk/<id_produk>", methods=["GET"])
-@token_required
-def get_produk_id(decoded_id_user, decoded_id_toko, id_produk):
+def get_produk_id(id_produk):
     try:
         # Fetch data user dari database
         sql = "SELECT id_produk, id_toko, nama_produk, id_bentuk_kacamata, harga, deskripsi, stok, is_active FROM produk WHERE id_produk = %s"
