@@ -640,10 +640,39 @@ def rating(decoded_id_user, decoded_id_toko):
                 
                 if cur: 
                     db.commit()
-                    return jsonify({
-                        'status': 200,
-                        'message': 'Success'
-                    }), 200
+                    
+                    sql_select_toko = "SELECT toko.id_toko FROM toko JOIN produk ON toko.id_toko = produk.id_toko WHERE id_produk = %s"
+                    values_select_toko = [id_produk]
+                    
+                    cur.execute(sql_select_toko, values_select_toko)
+                    id_toko = cur.fetchone()
+                    
+                    if(id_toko):
+                        # Update Rating Toko
+                        sql_update_rating = '''
+                            UPDATE toko 
+                            SET rating =  (SELECT AVG(rating.nilai_rating) FROM rating  
+                                            JOIN produk ON produk.id_produk = rating.id_produk 
+                                            WHERE id_toko = %s)
+
+                            WHERE id_toko = %s
+                        '''
+                        values_update_rating = [id_toko, id_toko]
+                        
+                        try: 
+                            cur.execute(sql_update_rating, values_update_rating)
+                            db.commit()
+                            
+                            return jsonify({
+                                'status': 200,
+                                'message': 'Success'
+                            }), 200
+                        
+                        except:
+                            return jsonify({
+                                'status': 500,
+                                'message': 'Server error'
+                            }), 500
                 
                 else:
                     return jsonify({
@@ -655,7 +684,7 @@ def rating(decoded_id_user, decoded_id_toko):
             except MySQLdb.IntegrityError:
                 return jsonify({
                     'status': '404',
-                    'message': 'Produk tidak ditemukan'
+                    'message': 'Product not found'
                 }), 404
             
             finally:
