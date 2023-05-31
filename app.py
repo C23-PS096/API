@@ -677,7 +677,7 @@ def create_produk(decoded_id_user, decoded_id_toko):
     if request.method == "POST":
         try:
             # Ambil values dari JSON
-            nama_produk, harga, deskripsi, stok = itemgetter("nama_produk", "harga", "deskripsi", "stok")(content)
+            id_toko, nama_produk, harga, deskripsi, stok = itemgetter("id_toko", "nama_produk", "harga", "deskripsi", "stok")(content)
 
             id_produk = hash_name(nama_produk)
 
@@ -749,6 +749,57 @@ def get_produk_id(decoded_id_user, decoded_id_toko, id_produk):
         # Fetch data user dari database
         sql = "SELECT id_produk, id_toko, nama_produk, id_bentuk_kacamata, harga, deskripsi, stok, is_active FROM produk WHERE id_produk = %s"
         values = [id_produk]
+        cur.execute(sql, values)
+
+        produk = cur.fetchall()
+        if produk:
+            response_data = []
+
+            for data_produk in produk:
+                (
+                    id_produk,
+                    id_toko,
+                    nama_produk,
+                    id_bentuk_kacamata,
+                    harga,
+                    deskripsi,
+                    stok,
+                    is_active,
+                ) = data_produk
+
+                result_produk = {
+                    "id_produk": id_produk,
+                    "id_toko": id_toko,
+                    "nama_produk": nama_produk,
+                    "id_bentuk_kacamata": id_bentuk_kacamata,
+                    "harga": harga,
+                    "deskripsi": deskripsi,
+                    "stok": stok,
+                    "is_active": is_active,
+                }
+
+                response_data.append(result_produk)
+
+            return (
+                jsonify({"status": 200, "message": "Success", "data": response_data}),
+                200,
+            )
+        else:
+            return (
+                jsonify({"status": 400, "message": "Data not found", "data": None}),
+                400,
+            )
+    # apabila server error
+    except:
+        return jsonify({"status": 500, "message": "Internal Server Error"}), 500
+    
+@app.route("/produk/toko/<id_toko>", methods=["GET"])
+@token_required
+def get_produk_by_toko(decoded_id_user, decoded_id_toko, id_toko):
+    try:
+        # Fetch data user dari database
+        sql = "SELECT id_produk, id_toko, nama_produk, id_bentuk_kacamata, harga, deskripsi, stok, is_active FROM produk WHERE id_toko = %s"
+        values = [id_toko]
         cur.execute(sql, values)
 
         produk = cur.fetchall()
