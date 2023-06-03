@@ -17,18 +17,19 @@ cached_model = None
 def load_cached_model():
      global cached_model
      
-     if os.path.exists(MODEL_FILE_PATH):
-          cached_model = load_model(MODEL_FILE_PATH)
+     if cached_model is None:
+          if os.path.exists(MODEL_FILE_PATH):
+               cached_model = load_model(MODEL_FILE_PATH)
           
-     else:
-          client = storage.Client.from_service_account_json(CREDENTIALS)
-          bucket = client.bucket(BUCKET_NAME)
-          blob = bucket.get_blob(MODEL_PATH)
+          else:
+               client = storage.Client.from_service_account_json(CREDENTIALS)
+               bucket = client.bucket(BUCKET_NAME)
+               blob = bucket.get_blob(MODEL_PATH)
+               
+               
+               blob.download_to_filename(MODEL_FILE_PATH)
+               cached_model = load_model(MODEL_FILE_PATH)
           
-          
-          blob.download_to_filename(MODEL_FILE_PATH)
-          cached_model = load_model(MODEL_FILE_PATH)
-     
 
 def predictions(image_path):
      load_cached_model()
@@ -44,19 +45,19 @@ def predictions(image_path):
 
      # Process the preprocessed image using the loaded model
      predictions = cached_model.predict(preprocessed_img)
-     print(predictions)
      return predictions
 
 # File to process
 # image_path = 'contoh/tes2.png'
 
 img_directory = 'contoh/'
-for index, filename in enumerate(os.listdir(img_directory)):
-     print(index, filename)
+for filename in os.listdir(img_directory):
+     print(filename)
      
      img =os.path.join(img_directory, filename)
      
-     predictions(img)
+     result = predictions(img)
+     print(result)
      
 
 # # Prediction Results
