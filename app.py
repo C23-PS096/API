@@ -569,10 +569,76 @@ def getTokoById(decoded_id_user, decoded_id_toko, id_toko):
             400,
         )
 
-# TODO: tambahin beli (haffif)
 @app.route("/beli", methods=["POST"])
-def beliProduk():
-    return
+@token_required
+def beliProduk(decoded_id_user, decoded_id_toko):
+    id_user = decoded_id_user
+    id_toko = decoded_id_toko
+    content = get_data_json(request)
+
+    try:
+            # Ambil values dari JSON
+            id_produk, jumlah_produk, = itemgetter(
+                "id_produk", "jumlah_produk")(content)
+
+            # Memeriksa apakah pengguna memiliki peran user (id_role=1)
+            sql = "SELECT id_role FROM users WHERE id_user = %s"
+            values = (id_user,)
+            cur.execute(sql, values)
+            result = cur.fetchone()
+
+            if result and result[0] == 1:
+                # Menjalankan query INSERT untuk beli produk ke database
+                sql = """
+                    INSERT INTO history (id_user, id_produk, jumlah_produk, id_status)
+                    SELECT u.id_user, p.id_produk, %s, %s
+                    FROM user u, produk p
+                    WHERE u.id_user = %s
+                    AND p.id_produk = %s;
+                    
+                    UPDATE produk
+                    SET stok = stok - %s
+                    WHERE id_produk = %s;
+                """
+                
+                values = (
+                    id_user,
+                    id_produk,
+                    jumlah_produk,
+                    None
+                )
+                cur.execute(sql, values)
+
+                # Commit perubahan ke database
+                db.commit()
+
+                # Berhasil semuanya
+                return (
+                    jsonify(
+                        {
+                            "status": 200,
+                            "message": "Success to Buy Product",
+                            "data": {"id_product": id_produk},
+                        }
+                    ),
+                    200,
+                )
+            else:
+                return (
+                    jsonify(
+                        {
+                            "status": 403,
+                            "message": "Only users can access this feature",
+                        }
+                    ),
+                    403,
+                )
+
+        # Kalau values JSON tidak ada
+    except TypeError:
+            return jsonify({"status": 400, "message": "All data must be filled"}), 400
+
+    
 
 @app.route("/rating", methods=["GET", "POST"])
 @token_required
