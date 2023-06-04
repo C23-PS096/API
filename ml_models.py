@@ -1,40 +1,46 @@
+from google.cloud import ndb
 from google.cloud import storage
 from keras.models import load_model
 import keras.utils as image
 import numpy as np
-import os
 
 PROJECT_NAME = 'dev-optikoe'
 CREDENTIALS = 'ml-model-read.json'
 BUCKET_NAME = 'optikoe-ml-models'
 MODEL_PATH = 'face_type_model.h5'
 
-MODEL_FILE_PATH = "model1.h5"
-cached_model = None
-cached_model_timestamp = None
-
-# Load the model from Google Cloud Storage (GCS) and cache it
+class CachedModel(ndb.Model):
+     model = ndb.PickleProperty()
+     timestamp = ndb.DateTimeProperty(auto_now = True)
+     
+# Load the model from Google Cloud Storage (GCS) and cache it in NDB
 def load_cached_model():
-     global cached_model, cached_model_timestamp
+     cached_model = CachedModel.query().get()
      
-     if cached_model is not None and os.path.exists(MODEL_FILE_PATH):
-          local_timestamp = os.path.getmtime(MODEL_FILE_PATH)
-        
-          if local_timestamp >= cached_model_timestamp:
-               # Cached model is up to date
-               return
+     if cached_model and cached_model.model:
+          return  cached_model.model
      
-     if cached_model is None:
-          if os.path.exists(MODEL_FILE_PATH) is not True:
-               client = storage.Client.from_service_account_json(CREDENTIALS)
-               bucket = client.bucket(BUCKET_NAME)
-               blob = bucket.get_blob(MODEL_PATH)
-               
-               blob.download_to_filename(MODEL_FILE_PATH)
-               
-          cached_model = load_model(MODEL_FILE_PATH)
-          cached_model_timestamp = os.path.getmtime( MODEL_FILE_PATH)
+     client = storage.Client(project=PROJECT_NAME, credentials=CREDENTIALS)
+     bucket = client.bucket(BUCKET_NAME)
+     blob = bucket.blob(MODEL_PATH)
+     
+     model_file_path = "/tmp/model.h5"  # Temporarily store the model file
+    
+     blob.download_to_filename(model_file_path)
+    
+     # Load the model
+     loaded_model = load_model(model_file_path)
+     
+     # Save the model to ndb
+     if not cached_model:
+        cached_model = CachedModel()
+    
+     cached_model.model = loaded_model
+     cached_model.put()
+    
+     return loaded_model
 
+     
 def predictions(image_path):
      load_cached_model()
      target_size = (250, 400)
@@ -66,16 +72,3 @@ def predictions(image_path):
      }
           
      return data
-
-# File to process
-# image_path = 'contoh/tes2.png'
-
-# Test Models
-img_directory = 'contoh/'
-for filename in os.listdir(img_directory):
-     print(filename)
-     
-     img =os.path.join(img_directory, filename)
-     
-     result = predictions(img)
-     print(result)
