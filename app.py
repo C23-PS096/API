@@ -592,7 +592,7 @@ def beliProduk(decoded_id_user, decoded_id_toko):
                 sql = """
                     INSERT INTO history (id_user, id_produk, jumlah_produk, id_status)
                     SELECT u.id_user, p.id_produk, %s, %s
-                    FROM user u, produk p
+                    FROM users u, produk p
                     WHERE u.id_user = %s
                     AND p.id_produk = %s;
                     
@@ -602,12 +602,17 @@ def beliProduk(decoded_id_user, decoded_id_toko):
                 """
                 
                 values = (
+                    jumlah_produk,
+                    0,  # Set id_status to 0
                     id_user,
                     id_produk,
                     jumlah_produk,
-                    None
+                    id_produk
                 )
                 cur.execute(sql, values)
+
+                # Konsumsi set hasil dari statement pertama    
+                cur.nextset()
 
                 # Commit perubahan ke database
                 db.commit()
