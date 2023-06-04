@@ -42,7 +42,7 @@ def load_cached_model():
 
      
 def predictions(image_path):
-     load_cached_model()
+     cached_model = load_cached_model()
      target_size = (250, 400)
      
      img = image.load_img(image_path, target_size=target_size)
