@@ -2,3 +2,4 @@ service_account.json
 ml-model-read.json
 /contoh
 model1.h5
+.venv
