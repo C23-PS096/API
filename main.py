@@ -19,18 +19,18 @@ def getFacePrediction():
             'status': 200,
             'message': "Endpoint called"
         })
-        
+
     if request.method == "POST":
         file_upload = request.files['file']
-        
-        if file_upload:    
+
+        if file_upload:
             file_contents = file_upload.read()
             file_stream = BytesIO(file_contents)
-            
-            prediction_result = predictions(file_stream)
+
+            prediction_result = predictions(file_stream, model_type='0')
             prediction_result['probability'] = float(prediction_result['probability'])
             print(prediction_result)
-            
+
             return jsonify({
                 'status': 200,
                 'message': "Success",
@@ -50,17 +50,18 @@ def getKacamataPrediction():
             'status': 200,
             'message': "Endpoint called"
         })
+
     if request.method == "POST":
         file_upload = request.files['file']
-        
-        if file_upload:    
+
+        if file_upload:
             file_contents = file_upload.read()
             file_stream = BytesIO(file_contents)
-            
-            prediction_result = predictions(file_stream)
+
+            prediction_result = predictions(file_stream, model_type='1')
             prediction_result['probability'] = float(prediction_result['probability'])
             print(prediction_result)
-            
+
             return jsonify({
                 'status': 200,
                 'message': "Success",
