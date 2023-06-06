@@ -3,7 +3,6 @@ from google.oauth2 import service_account
 from keras.models import load_model
 import keras.utils as image
 import numpy as np
-import os
 # from google.appengine.api import memcache
 
 PROJECT_NAME = 'dev-optikoe'
@@ -14,7 +13,7 @@ MODEL_PATH = 'face_type_model.h5'
 AUTHENTICATION = service_account.Credentials.from_service_account_file(CREDENTIALS)
 # MEMCACHE_KEY = 'cached_model'
 
-# Load the model from Google Cloud Storage (GCS) and cache it in NDB
+# Load the model from Google Cloud Storage (GCS)
 def load_cached_model():
     # cached_model = memcache.get(MEMCACHE_KEY)
     
@@ -26,9 +25,7 @@ def load_cached_model():
     blob = bucket.get_blob(MODEL_PATH)
     
     model_file_path = "/tmp/model.h5"
-
-    if os.path.exists(model_file_path) is not True:
-        blob.download_to_filename(model_file_path)
+    blob.download_to_filename(model_file_path)
     
     loaded_model = load_model(model_file_path)
     
