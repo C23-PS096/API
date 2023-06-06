@@ -3,6 +3,7 @@ from ml_models import predictions
 from io import BytesIO
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 8 * 1000 * 1000
 
 @app.route("/", methods=['GET'])
 def helloWorld():
@@ -34,6 +35,12 @@ def getFacePrediction():
                 'status': 200,
                 'message': "Success",
                 'data': prediction_result
+            })
+
+        else:
+            return jsonify({
+                'status': 400,
+                'message': "Upload a file"
             })
 
 if __name__ == "__main__":
