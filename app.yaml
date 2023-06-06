@@ -13,7 +13,3 @@ env_variables:
   BUCKET_NAME: 'optikoe-ml-models'
   MODEL_PATH: 'face_type_model.h5'
   FLASK_ENV: 'production'
-
-libraries:
-- name: ndb
-  version: latest
