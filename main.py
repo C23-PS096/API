@@ -11,8 +11,14 @@ def helloWorld():
         'message': "Hello, flask!!"
     })
 
-@app.route("/face", methods=['POST'])
+@app.route("/face", methods=['POST', 'GET'])
 def getFacePrediction():
+    if request.method == "GET":
+        return jsonify({
+            'status': 200,
+            'message': "Endpoint called"
+        })
+        
     if request.method == "POST":
         file_upload = request.files['file']
         
