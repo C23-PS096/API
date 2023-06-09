@@ -3,6 +3,7 @@ from google.oauth2 import service_account
 from keras.models import load_model
 import keras.utils as image
 import numpy as np
+import os
 # from google.appengine.api import memcache
 
 PROJECT_NAME = 'dev-optikoe'
@@ -24,8 +25,11 @@ def load_cached_model(model_path):
     client = storage.Client.from_service_account_json(CREDENTIALS)
     bucket = client.bucket(BUCKET_NAME)
     blob = bucket.get_blob(model_path)
+
+    model_file_name = "model.h5"
+    #model_file_path = "/tmp/model.h5"
+    model_file_path = os.path.join("/tmp", model_path, model_file_name)
     
-    model_file_path = "/tmp/model.h5"
     blob.download_to_filename(model_file_path)
     
     loaded_model = load_model(model_file_path)
