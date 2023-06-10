@@ -25,10 +25,8 @@ def load_cached_model(model_path):
     client = storage.Client.from_service_account_json(CREDENTIALS)
     bucket = client.bucket(BUCKET_NAME)
     blob = bucket.get_blob(model_path)
-
-    model_file_name = "model.h5"
-    #model_file_path = "/tmp/model.h5"
-    model_file_path = os.path.join("/tmp", model_path, model_file_name)
+    
+    model_file_path = os.path.join("/tmp", model_path)
     
     blob.download_to_filename(model_file_path)
     
