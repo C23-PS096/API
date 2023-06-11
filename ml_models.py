@@ -42,8 +42,12 @@ def load_cached_model(model_path):
 def predictions(image_path, model_type):
      if model_type == '0':
         model_path = MODEL_PATH_FACE
+        shape_label = 'face_shape'
+        class_labels = ['Oval', 'Round', 'Square', 'Oblong', 'Heart']
      elif model_type == '1':
         model_path = MODEL_PATH_KACAMATA
+        shape_label = 'kacamata_shape'
+        class_labels = ['Oval', 'Rectangle', 'Round', 'Square']
      else:
         raise ValueError("Invalid model type")
      
@@ -61,18 +65,18 @@ def predictions(image_path, model_type):
      # Process the preprocessed image using the loaded model
      predictions = cached_model.predict(preprocessed_img)
      
-     # Prediction Results
-     class_names = ['Oval', 'Round', 'Square', 'Oblong', 'Heart']
+   #   # Prediction Results
+   #   class_names = ['Oval', 'Round', 'Square', 'Oblong', 'Heart']
 
      # Get the index of the class with the highest probability
      predicted_class_index = np.argmax(predictions[0])
 
      # Get the corresponding class name and its probability
-     predicted_class = class_names[predicted_class_index]
+     predicted_class = class_labels[predicted_class_index]
      probability = predictions[0][predicted_class_index]
 
      data = {
-          'face_shape': predicted_class,
+          shape_label: predicted_class,
           'probability': probability
      }
           
