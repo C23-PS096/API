@@ -1,0 +1,26 @@
+runtime: python
+service: api
+entrypoint: gunicorn wsgi:application
+
+env: flex
+
+runtime_config:
+  operating_system: ubuntu22
+
+manual_scaling: 
+  instances: 2
+
+resources:
+  cpu: 1
+  memory_gb: 6
+  disk_size_gb: 16
+
+handlers:
+- url: /.*
+  script: auto
+
+env_variables:
+  CREDENTIALS: 'ml-model-read.json'
+  BUCKET_NAME: 'optikoe-ml-models'
+  MODEL_PATH: 'face_type_model.h5'
+  FLASK_ENV: 'production'
