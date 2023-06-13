@@ -152,9 +152,9 @@ gcloud app deploy --region asia-southeast2
 
 ### Home
 ---
-Endpoint: `GET {{baseurl}}/`
-Body Request : -
-Authorization : -
+Endpoint: `GET {{baseurl}}/` <br>
+Body Request : - <br>
+Authorization : - <br>
 
 Contoh respon:
 ```
@@ -166,9 +166,12 @@ Contoh respon:
 
 ### Kacamata
 ---
-Endpoint: `GET {{baseurl}}/kacamata`
-Body Request : -
-Authorization : -
+
+#### GET Method
+---
+Endpoint: `GET {{baseurl}}/kacamata` <br>
+Body Request : - <br>
+Authorization : - <br>
 
 Contoh respon:
 ```
@@ -178,9 +181,12 @@ Contoh respon:
 }
 ```
 
-Endpoint: `POST {{baseurl}}/kacamata`
-Body Request : image file
-Authorization : -
+#### POST Method
+---
+
+Endpoint: `POST {{baseurl}}/kacamata` <br>
+Body Request : image file <br>
+Authorization : - <br>
 
 Contoh respon:
 ```
@@ -196,9 +202,11 @@ Contoh respon:
 
 ### Face
 ---
-Endpoint: `GET {{baseurl}}/face`
-Body Request : -
-Authorization : -
+#### GET Method
+---
+Endpoint: `GET {{baseurl}}/face` <br>
+Body Request : - <br>
+Authorization : - <br>
 
 Contoh respon:
 ```
@@ -208,9 +216,11 @@ Contoh respon:
 }
 ```
 
-Endpoint: `POST {{baseurl}}/face`
-Body Request : image file
-Authorization : -
+#### POST Method
+---
+Endpoint: `POST {{baseurl}}/face` <br>
+Body Request : image file <br>
+Authorization : - <br>
 
 Contoh respon:
 ```
