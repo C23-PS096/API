@@ -7,7 +7,6 @@ This is repository of ML API for Capstone Bangkit 2023. We are from Team ID C23-
 4. (CC)  C038DSX0738 – Haffif Rasya Fauzi – Institut Teknologi Sepuluh Nopember - [Active]
 5. (CC) C038DSY0684 – Cherylene Trevina – Institut Teknologi Sepuluh Nopember - [Active]
 6. (MD) A305DSX3540 – Irnanda Rizka Fadhillah – Universitas Pembangunan Nasional Veteran Jawa Timur  - [Active]
-<br>
 
 ## Install the Requirements
 ---
