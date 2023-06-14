@@ -7,8 +7,6 @@ This is repository of ML API for Capstone Bangkit 2023. We are from Team ID C23-
 4. (CC)  C038DSX0738 – Haffif Rasya Fauzi – Institut Teknologi Sepuluh Nopember - [Active]
 5. (CC) C038DSY0684 – Cherylene Trevina – Institut Teknologi Sepuluh Nopember - [Active]
 6. (MD) A305DSX3540 – Irnanda Rizka Fadhillah – Universitas Pembangunan Nasional Veteran Jawa Timur  - [Active]
-
-For our team link can be access at: `https://api-dot-dev-optikoe.et.r.appspot.com/`
 <br>
 
 ## Install the Requirements
@@ -93,7 +91,6 @@ To be able to run the application, one of the aspects that must be considered is
 8. Upload will take a minutes. And finally model has been uploaded.
 ![Click Create](images/model_upload.png)   
 
-Model has been uploaded on Bucket.
 ## Config app.yaml and wsgi.py Files
 ---
 from app.yaml file:
