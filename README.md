@@ -1,34 +1,26 @@
 # Optiqoe
 ---
 This is repository of ML API for Capstone Bangkit 2023. We are from Team ID C23-PS096 and our team member:
-1. (ML) M181DSX0179 – Bintang Gabriel Hutabarat – Universitas Indonesia - [Active]
-2. (ML) M181DSX0344 – Farhan Hanif Saefuddin – Universitas Indonesia - [Active]
-3. (ML) M017DKX3924 – Steven Alexander Liong – Institut Teknologi Bandung - [Active]
-4. (CC)  C038DSX0738 – Haffif Rasya Fauzi – Institut Teknologi Sepuluh Nopember - [Active]
-5. (CC) C038DSY0684 – Cherylene Trevina – Institut Teknologi Sepuluh Nopember - [Active]
-6. (MD) A305DSX3540 – Irnanda Rizka Fadhillah – Universitas Pembangunan Nasional Veteran Jawa Timur  - [Active]
+1. (ML) M181DSX0179 – Bintang Gabriel Hutabarat – Universitas Indonesia
+2. (ML) M181DSX0344 – Farhan Hanif Saefuddin – Universitas Indonesia
+3. (ML) M017DKX3924 – Steven Alexander Liong – Institut Teknologi Bandung
+4. (CC)  C038DSX0738 – Haffif Rasya Fauzi – Institut Teknologi Sepuluh Nopember
+5. (CC) C038DSY0684 – Cherylene Trevina – Institut Teknologi Sepuluh Nopember
+6. (MD) A305DSX3540 – Irnanda Rizka Fadhillah – Universitas Pembangunan Nasional Veteran Jawa Timur
 
 ## Install the Requirements
 ---
-For run this program, you must install the library. this are dependencies or libraries required for the application:
 
-```
-keras  == 2.12.0 
-tensorflow == 2.12.0
-numpy == 1.23.5
-google-cloud-storage == 2.9.0
-Flask == 2.3.2
-pillow == 9.5.0
-gunicorn == 20.1.0
-python-dotenv == 1.0.0
-# appengine-python-standard == 1.1.2
-```
+[Gunicorn](https://gunicorn.org/) (Green Unicorn) is a WSGI compliant web server for Python Applications that receive requests sent to the Web Server from a Client and forwards them onto the Python applications or Web Frameworks (such as Flask or Django) in order to run the appropriate application code for the request.
 
-Apart from the method above, there is another way, namely cloning a repository in a way that will be explained in the next section.
+You can install `gunicorn` using command `sudo apt-get update && sudo apt-get install gunicorn`.
 
-## Clone the Repository
+## Steps to deploy
+
+### Clone the Repository
 ---
-You run the application by clone from github. Here are the steps:
+
+Run the application by cloning the github. Here are the steps:
 
 ```
 git clone -b ml-api https://github.com/TCherylene/optiqoe.git
@@ -37,14 +29,13 @@ git clone -b ml-api https://github.com/TCherylene/optiqoe.git
 or you can download the file by click code in right and Download the Zip.
 ![Download from zip](images/download_zip.png)
 
-Next step is you must install the requirements using this command:
+Next step, install the requirements using this command:
 
 ```
 pip install -r requirements.txt
 ```
 
-And make sure everything has been installed successfully. if it is successful then you can proceed to the next step.
-## Prepare the Service Account for Deploy on GCP
+### Prepare the Service Account for Deploying on GCP
 ---
 Before carrying out the deployment stage on Google Cloud Platform (GCP). The thing that must be prepared is to generate a service account. This is necessary to grant the necessary permissions to the application so that users can interact with those resources.
 
@@ -72,7 +63,7 @@ After the step completed. You must generate the key. This are steps you can foll
 
 From all steps above, it used for read AI Models from the the bucket.
 
-## Upload Model to Bucket
+### Upload Model to Bucket
 ---
 To be able to run the application, one of the aspects that must be considered is uploading the model to the Bucket. Here are the steps:
 1. Go to Google Storage page and choose Bucket Menu.
@@ -90,9 +81,9 @@ To be able to run the application, one of the aspects that must be considered is
 8. Upload will take a minutes. And finally model has been uploaded.
 ![Click Create](images/model_upload.png)   
 
-## Config app.yaml and wsgi.py Files
+### Configuring app.yaml and wsgi.py Files
 ---
-from app.yaml file:
+from app-flex.yaml file:
 
 ```
 runtime: python
@@ -134,34 +125,34 @@ env_variables:
 - `env_variables` :  It sets the values for various environment variables such as CREDENTIALS, BUCKET_NAME, MODEL_PATH, and FLASK_ENV.
 
 
-then, on wsgi.py files is used to create an instance of the Flask application that can be used by the WSGI server.
+`wsgi.py` is used to create an instance of the Flask application that can be used by the WSGI server.
 
 ```
 from main import app
 application = app
 ```
 
-- `from main import app` : In this context, `main` refers to a Python file (usually named `main.py`) that contains the Flask application.
-- `application = app` : By assigning the Flask app object to application, the WSGI server can correctly interact with the Flask application.
+- `from main import app` : In this context, `main` refers to a Python file (named `main.py`) that contains the Flask application.
+- `application = app` : By assigning the Flask app object to variable `application`, the WSGI server can correctly interact with the Flask application.
 
-## Deploy on Google Cloud Platform
+### Deploy on Google Cloud Platform
 ---
 For deploy on GCP, first, you must open google cloud console and ensure you have account. This are steps for deploy on google cloud.
 1. First, open the terminal.
-2. Do the clone repository step as in the previous session.
-3. Next, the enter the directory with command `cd` on terminal.
-4. After that, upload the private key that was previously created in the project repository.
+2. Clone the repository as mentioned in the [previous section](#clone-the-repository).
+3. Next, the enter the directory with command `cd foldername` on terminal.
+4. After that, upload the private key that was previously [created in the project repository](#prepare-the-service-account-for-deploying-on-gcp).
 5. Then, ensure the private key already exists. And do deploy with command:
 
 ```
-gcloud app deploy --region asia-southeast2
+gcloud app deploy app-flex.yaml --region asia-southeast2
 ```
 
 6. Click authorize and select the option `Y`.
-7. This process will wait several minutes.
-8. Finally, after process has been finished, app engine will generate the link.
+7. This process will take several minutes.
+8. Finally, after process has been finished, app engine will generate the link. The link will be written as `{{baseurl}}` in the following API documentation.
 
-## Endpoint Optiqoe Application for ML
+## Optiqoe API for ML Predictions
 ---
 
 ### Home
