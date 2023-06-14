@@ -47,7 +47,6 @@ pip install -r requirements.txt
 ```
 
 And make sure everything has been installed successfully. if it is successful then you can proceed to the next step.
-
 ## Prepare the Service Account for Deploy on GCP
 ---
 Before carrying out the deployment stage on Google Cloud Platform (GCP). The thing that must be prepared is to generate a service account. This is necessary to grant the necessary permissions to the application so that users can interact with those resources.
@@ -76,6 +75,25 @@ After the step completed. You must generate the key. This are steps you can foll
 
 From all steps above, it used for read AI Models from the the bucket.
 
+## Upload Model to Bucket
+---
+To be able to run the application, one of the aspects that must be considered is uploading the model to the Bucket. Here are the steps:
+1. Go to Google Storage page and choose Bucket Menu.
+![Cloud Storage](images/cloud_storage.png)
+2. Then, click `create` bucket.
+![Create Bucket](images/create_storage.png)
+3. Fill unique name the bucket and click continue.
+4. Next, select `location type` on region and choose asia-southeast2 (jakarta)
+![Select Location](images/select_location_bucket.png)
+5. After that, follow the default setting and click create
+![Click Create](images/click_create.png) 
+6. We will wait several minutes to generate the bucket.
+7. Then, click upload files to upload model.
+![Click Create](images/upload_files.png)
+8. Upload will take a minutes. And finally model has been uploaded.
+![Click Create](images/model_upload.png)   
+
+Model has been uploaded on Bucket.
 ## Config app.yaml and wsgi.py Files
 ---
 from app.yaml file:
