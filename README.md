@@ -80,7 +80,7 @@ From all steps above, it used for read AI Models from the the bucket.
 To be able to run the application, one of the aspects that must be considered is uploading the model to the Bucket. Here are the steps:
 1. Go to Google Storage page and choose Bucket Menu.
 ![Cloud Storage](images/cloud_storage.png)
-2. Then, click `create` bucket.
+2. Then, click `create` bucket. <br>
 ![Create Bucket](images/create_storage.png)
 3. Fill unique name the bucket and click continue.
 4. Next, select `location type` on region and choose asia-southeast2 (jakarta)
