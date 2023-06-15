@@ -142,15 +142,19 @@ For deploy on GCP, first, you must open google cloud console and ensure you have
 2. Clone the repository as mentioned in the [previous section](#clone-the-repository).
 3. Next, the enter the directory with command `cd foldername` on terminal.
 4. After that, upload the private key that was previously [created in the project repository](#prepare-the-service-account-for-deploying-on-gcp).
-5. Then, ensure the private key already exists. And do deploy with command:
+5.  Make sure we already in the right project where you wanna upload the project using `gcloud config set project <project_id>
+6. Specify the region where you want to deploy. Our team use `asia-southeast2` as the region. Use command: `gcloud config set compute/region asia-southeast2`
+7. Then, ensure the private key already exists. And do deploy with command:
 
 ```
-gcloud app deploy app-flex.yaml --region asia-southeast2
+gcloud app deploy app-flex.yaml
 ```
 
-6. Click authorize and select the option `Y`.
-7. This process will take several minutes.
-8. Finally, after process has been finished, app engine will generate the link. The link will be written as `{{baseurl}}` in the following API documentation.
+You can change the `app-flex.yaml` based on your yaml file. You don't need to specify the file if the name is `app.yaml`
+
+8. If prompted, click authorize and select the option `Y`.
+9. This process will take several minutes.
+10. Finally, after process has been finished, app engine will generate the link. The link will be written as `{{baseurl}}` in the following API documentation.
 
 ## Optiqoe API for ML Predictions
 ---
